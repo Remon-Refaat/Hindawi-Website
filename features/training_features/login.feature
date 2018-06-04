@@ -1,3 +1,5 @@
+@first
+@second
 Feature: As I user, I want to login
 
   Background:
@@ -14,8 +16,7 @@ Feature: As I user, I want to login
     And I enter password "<password>"
     When I click on "Sign In" button
     Then I should see the error message "<error>"
-    Then I navigate to "https://www.google.com"
     Examples:
       | username            | password | error                                                   |
       | mohamed@hindawi     | 123456   | The email address or password you entered is incorrect. |
-      | mohamed@hindawi.com | 123456   | The email address or password you entered is incorrect. |
+      | mohamed@hindawi.com | 123456   | email address or password you entered is incorrect. |

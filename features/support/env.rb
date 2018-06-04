@@ -5,7 +5,17 @@ require 'rspec/expectations'
 require 'capybara'
 require 'capybara/dsl'
 require 'capybara/cucumber'
+require 'capybara-screenshot/cucumber'
 
+
+
+#############################################
+########### Environment Variables ###########
+#############################################
+
+ENV['PROJECT_DIR'] = Dir.pwd
+ENV['DATA_DIR'] = ENV['PROJECT_DIR'] + '/data'
+ENV['SCREENSHOTS_DIR'] = ENV['PROJECT_DIR'] + '/screenshots'
 
 #############################################
 ################ Capybara ###################
@@ -21,9 +31,8 @@ end
 Capybara.default_driver = :chrome
 Capybara.default_selector = :xpath
 Capybara.default_max_wait_time = 5
+Capybara.save_path = ENV['SCREENSHOTS_DIR']
+Capybara::Screenshot.autosave_on_failure = false
+Capybara::Screenshot.append_timestamp = false
 
-#############################################
-########### Environment Variables ###########
-#############################################
 
-ENV['DATA_DIR'] = Dir.pwd + '/data'
