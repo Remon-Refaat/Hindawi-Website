@@ -54,7 +54,7 @@ Feature: I want to test search manuscript in mts
   Scenario: Test if the user can search by submission date
     When the user Choose The submission date from "06/01/2018"
     Then System should display manuscripts submitted from the date enetered till now
-
+  @doaa
   Scenario: Test if the user can search by submission from & to dates
     When the user Choose The submission date from "04/01/2018"
     And the user Choose The submission date To "04/20/2018"

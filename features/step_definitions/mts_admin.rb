@@ -203,7 +203,7 @@ end
 ################ Search with Submission date #################
 ##############################################################
 
-Given /^the user Choose The submission date from (.*)$/ do |from|
+Given /^the user Choose The submission date from "(.*)"$/ do |from|
   @fromdate= from
   step %Q{Open Search Manuscript page and verify on the title}
   fill_in 'SubmissionFrom', with: @fromdate
@@ -228,8 +228,6 @@ end
 ####################################################################
 ################ Search with Submission date range #################
 ####################################################################
-#
-# Problem !#
 
 Given /^the user Choose The submission date To "(.*)"$/ do |to|
   @todate = to
@@ -243,13 +241,14 @@ Then /^System should display manuscripts submitted in that range$/ do
   sleep 5
   submission_date = find(:xpath, "//td[contains(text(),'Submitted On')]//following-sibling::td").text
   date = Date.parse submission_date
-  datefrom = Date.parse @fromdate
-  dateto = Date.parse @todate
+  datefrom = Date.strptime(@fromdate, "%m/%d/%Y")
+  dateto = Date.strptime(@todate, "%m/%d/%Y")
 
   date.strftime("%Y-%m-%d")
   datefrom.strftime("%Y-%m-%d")
   dateto.strftime("%Y-%m-%d")
 
+  puts "#{datefrom}, #{dateto}"
   expect(date.between?(datefrom, dateto)).to be_truthy
 end
 ###############################################################
