@@ -287,6 +287,7 @@ Then ("The system redirect the user to Administrator Activities page") do
     puts "Wrong directing"
   end
 end
+<<<<<<< HEAD
 ####################################################################################
 ##Search by invalid Manuscript Issue Name##
 
@@ -342,3 +343,180 @@ Given /^enter invalid authors$/ do |table|
   expect(errors3).to eq ([])
 end
 
+=======
+
+
+
+
+
+
+
+###############EDit MS##################################
+#
+
+
+Given /^I open (.*)$/ do |url|
+  visit url
+end
+
+Given /^I enter username (.*)$/ do |username|
+  email = page.first("//div//input[@type='email']")
+  email.send_keys username
+
+end
+
+Given /^I click on Next button "(.*)"$/ do |btn|
+  page.find("//*[@id='#{btn}']/content/span").click
+  sleep 2
+end
+
+
+Given /^I enter password (.*)$/ do |pass|
+  passw = page.first("//input[@type='password']")
+  passw.send_keys pass
+end
+
+
+# And /^I pause$/ do
+#   print "Press any key to continue ...."
+#   STDIN.getc
+# end
+
+
+Given /^I navigate to EA account (.*)$/ do |url|
+  visit url
+  sleep 1
+end
+
+
+Given("Staff Manuscripts is opened") do
+  # page.driver.browser.action.move_to(page.find("//a[@href='/editorial.staff/']").native).perform
+  page.find(:xpath, "//a[@href='/editorial.staff/']").hover
+  page.find("//*[@id='ctl00_NavigationBar1_LeftNavBar']/div/ul/li/ul/li[5]/a").click
+end
+
+# When("I Click on MS ID randomly") do
+#
+#   page.all("//table[@id='MtsTable']/tbody/tr/td[3]/a").sample.click
+#      sleep 2
+# end
+
+
+When("I choose random MS and click on Edit Manuscript") do
+  loop do
+    page.all("//table[@id='MtsTable']/tbody/tr/td[3]/a").sample.click
+    sleep 1
+    break if page.has_selector?("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]")
+    page.evaluate_script('window.history.back()')
+  end
+  page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
+end
+
+# Given ("I log out") do
+# page.find("//*[@id='hindawi_links']/ul/li[2]/a").click
+# end
+
+
+
+####### Scenario 2: Verify that EA can update manuscripts details successfully  ################
+
+Given("I logged as EA") do
+  step %Q{I navigate to EA account "#{url}"}
+end
+
+Given("I opened Edit Manuscript") do
+  step %Q{Staff Manuscripts is opened}
+  step %Q{I choose random MS and click on Edit Manuscript}
+
+end
+#
+Given /^I fill the field Manuscript Title with (.*)$/ do |value|
+  # fill_in "//div[contains(text(),'#{label}:')]/../following-sibling::td", :with => value
+  #  fill_in label.gsub(' ', '_'), :with => value
+  fill_in 'MsTitle', with: value
+
+  sleep 1
+end
+
+Given("I select issue, Manuscript type, and recommendation from dropdown lists") do
+
+  find(:id, 'SelectedIssueId').all(:css, 'option')[rand(10)].select_option
+  sleep 4
+  type = find(:id, 'SelectedMsTypeId').all(:css, 'option')[rand(10)].select_option
+  puts @mstype = type.text
+  sleep 3
+  find(:id, 'SelectedRecommendationId').all(:css, 'option')[rand(10)].select_option
+  sleep 3
+end
+
+
+Given /^I upload Manuscript PDF File, Additional File, Supplementary Materials "(.*)"$/ do |path|
+  page.find("//*[@id='form0']/table/tbody/tr[6]/td[2]/input[@type = 'file']").send_keys(path)
+  sleep 2
+
+  page.find("//*[@id='form0']/table/tbody/tr[7]/td[2]/input[@type = 'file']").send_keys(path)
+
+  sleep 2
+  page.find("//*[@id='form0']/table/tbody/tr[8]/td[2]/input[@type = 'file']").send_keys(path)
+
+  @supplementary = 'ssssssssssssssssssssssssssss'
+  find("//*[@id='SupplementaryDescr']").send_keys(@supplementary)
+  sleep 2
+
+end
+
+Given /^I check on the radio buttons of conflicts of interest, data availability statement, funding statement, and Select the answers of the questions "(.*)", "(.*)", and "(.*)"$/ do |ans1, ans2, ans3|
+  types = ["Research Article", "Clinical Study", "Review Article", "Letter to the Editor", "Case Report"]
+  page.find("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@value='#{ans1}']").click if types.include?("#{@mstype}")
+  page.find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{ans2}']").click if types.first(2).include?("#{@mstype}")
+  page.find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{ans3}']").click if types.first(2).include?("#{@mstype}")
+
+  # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@type='radio']")
+  # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@type='radio']")
+  # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@type='radio']")
+
+  sleep 3
+  # find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{ans2}']").click if types.first(2).include?("#{@mstype}")
+  # find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{ans3}']").click if types.first(2).include?("#{@mstype}")
+end
+
+When("I click  on Update") do
+  find("//*[@id='form0']/table/tbody/tr[31]/td[2]/input").click
+end
+
+Then /^Validation "(.*)" should be displayed$/ do |message|
+  msg = find("//*[@id ='sp_Message']/b").text
+  puts expect(message == msg).to be true
+  sleep 3
+end
+
+Given ("Download additional file link should be displayed") do
+  puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[7]/td[2]/a[1]")).to be true
+end
+
+
+
+Given ("Delete link should be displayed beside additional file") do
+  puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[7]/td[2]/a[2]")).to be true
+end
+
+
+Given ("Delete link should be displayed beside supplementary materials") do
+  puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[8]/td[2]/a[2]")).to be true
+  sleep 2
+end
+
+
+Given ("I Check new changes in MTs admin in MS details") do
+  find("//*[@id='container']/div[9]/div[1]/a").click
+  sleep 5
+
+  supp = find("//span[@id='descr']").text
+  puts (expect supp==@supplementary).to be true
+
+  path = "#{ENV['DOWNLOAD_DIR']}/#{@ms_id}.v1.docx"
+
+  File.exist?(path).should be_truthy
+  # clear_downloads
+end
+>>>>>>> 07fc82f428a2d62c00cdcf3d805d6c3261cef9de
