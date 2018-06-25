@@ -2,7 +2,7 @@ Feature: I want to test search manuscript in mts
 
   Background:
     Given open Admin MTS
-@doaa
+
   Scenario: Login, Open Search Manuscript page, Assert on pages titles
     And enter valid email
     And click next
@@ -31,7 +31,7 @@ Feature: I want to test search manuscript in mts
 
   Scenario: Verify that the system displays a validation message when the user click search without enter data
     Then a validation message should appear
-#
+
   Scenario Outline: Test searching by invalid manuscript ID
     And the user clear manuscript ID field and enter invalid data <invalid_id>
     Then The system display <error>
@@ -42,6 +42,7 @@ Feature: I want to test search manuscript in mts
       | #@$#%$^%&&^ | Your search returned no results. |
       | <><>Asl<><> | Your search returned no results. |
       | -4153829    | Your search returned no results. |
+
 
   Scenario: Search by invalid Manuscript title, Manuscript issue & Manuscript issue name
     Then The system validate the following data
@@ -63,3 +64,34 @@ Feature: I want to test search manuscript in mts
   Scenario: Test if the user can search by version number
     When the user Choose "1" from drop down list
     Then All manuscripts which have one version shall be displayed
+
+
+  Scenario: Search by invalid Manuscript Issue Name
+    Given Open Search Manuscript page and verify on the title
+    Then enter invalid issue name
+      | input           | error                            |
+      | 123412312567833 | Your search returned no results. |
+      | #@$#%$^%&&^     | Your search returned no results. |
+      | <>noura<>       | Your search returned no results. |
+      | -4153829        | Your search returned no results. |
+
+
+  Scenario: Search by invalid Journal SubCode
+    Given Open Search Manuscript page and verify on the title
+    Then enter invalid subcode
+      | jsubcode        | subcodeerror                     |
+      | 123412312567833 | Your search returned no results. |
+      | #@$#%$^%&&^     | Your search returned no results. |
+      | <>noura<>       | Your search returned no results. |
+      | -4153829        | Your search returned no results. |
+
+
+  Scenario: Search by invalid Manuscript Author(s)
+    Given Open Search Manuscript page and verify on the title
+    Given enter invalid authors
+
+      | authors         | authrserror                      |
+      | 123412312567833 | Your search returned no results. |
+      | #@$#%$^%&&^     | Your search returned no results. |
+      | <>noura<>       | Your search returned no results. |
+      | -4153829        | Your search returned no results. |
