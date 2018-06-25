@@ -287,3 +287,58 @@ Then ("The system redirect the user to Administrator Activities page") do
     puts "Wrong directing"
   end
 end
+####################################################################################
+##Search by invalid Manuscript Issue Name##
+
+Then /^enter invalid issue name$/ do |table|
+  errors = []
+  table.hashes.each do |row|
+    find(:id, "SearchFields_IssueDescr").native.clear
+    find(:id, "SearchFields_IssueDescr").send_keys row['input']
+    step %Q{Click Search button}
+    error_message = find(:xpath, "//b").text
+    begin
+      expect(row['error'] == error_message).to be_truthy
+    rescue RSpec::Expectations::ExpectationNotMetError
+      errors << "I was expecting #{row['error']} for value #{row['Input']}"
+    end
+  end
+  expect(errors).to eq([])
+end
+#######################################################################################
+##Search by invalid Manuscript Journal SubCode##
+Given /^enter invalid subcode$/ do |table|
+  errors2 = []
+  table.hashes.each do |row|
+    find(:xpath, "//*[@id='SearchFields_IssueDescr']").native.clear
+    find(:id, "SearchFields_JournalSubCode").native.clear
+    find(:id, "SearchFields_JournalSubCode").send_keys row['jsubcode']
+    step %Q{Click Search button}
+    error_message = find(:xpath, "//b").text
+    begin
+      expect(row['subcodeerror'] == error_message).to be_truthy
+    rescue RSpec::Expectations::ExpectationNotMetError
+      errors2 << "I was expecting #{row['subcodeerror']} for value #{row['jsubcode']}"
+    end
+  end
+  expect(errors2).to eq([])
+end
+#########################################################################################
+##Search by invalid Manuscript Manuscripts Author(s)##
+Given /^enter invalid authors$/ do |table|
+  errors3 = []
+  table.hashes.each do |row|
+    find(:id, "SearchFields_JournalSubCode").native.clear
+    find(:id, "SearchFields_AuthorsName").native.clear
+    find(:id, "SearchFields_AuthorsName").send_keys row['authors']
+    step %Q{Click Search button}
+    error_message = find(:xpath, "//b").text
+    begin
+      expect (row['authorserror'] == error_message).to be_truthy
+    rescue
+      errors3 << "I was expecting #{row['authorserror']} for value #{row['authors']}"
+    end
+  end
+  expect(errors3).to eq ([])
+end
+
