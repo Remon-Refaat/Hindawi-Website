@@ -9,7 +9,8 @@ def take_screenshot(scenario)
   page.save_screenshot(screenshot_path)
 end
 
-Before do
+
+Before('@remon','not @emad') do
  # page.driver.browser.manage.window.maximize
   step %Q{Login to "http://beta.mts.hindawi.com/login/"}
   step %Q{Sign in using the email address "remon.refaat@hindawi.com" and the password "123456"}
