@@ -1,7 +1,9 @@
-source "https://rubygems.org"
+source "http://rubygems.org"
 
 gem 'selenium-webdriver'
-gem 'rspec'
 gem 'cucumber'
+gem 'rspec'
 gem 'capybara'
+gem 'faker'
 gem 'capybara-screenshot'
+gem 'wannabe_bool'

@@ -1,4 +1,4 @@
-When /^I pause$/ do
-  print 'Press Return to continue...'
+And /^I pause$/ do
+  print "Press any key to continue ...."
   STDIN.getc
 end
