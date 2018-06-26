@@ -4,11 +4,11 @@ Feature: I want to test search manuscript in mts
     Given open Admin MTS
 
   Scenario: Login, Open Search Manuscript page, Assert on pages titles
-    And enter valid email
+    Given enter valid email
     And click next
-    And enter valid password
+    Given enter valid password
     And click next again
-    And Open Search Manuscript page and verify on the title
+    Then Open Search Manuscript page and verify on the title
 
   Scenario: Verify that the user can back to general activities
     Given The user click on back to general activities
@@ -18,37 +18,40 @@ Feature: I want to test search manuscript in mts
     Then a validation message should appear
 
   Scenario: Search by Valid Manuscript ID
-    And the user enter valid Manuscript number "4153829"
+    Given the user enter valid Manuscript number "4153829"
     And Click Search button
     Then the system will display the correct manuscript
 
   Scenario: Verify that the user can select/clear all editorial recommendation
-    And Check select-clear all from editorial recommendation
+    Given Check select-clear all from editorial recommendation
     Then All editorial recommendation should be selected
     And Check select-clear all from editorial recommendation
     Then All editorial recommendation should be unselected
 
   Scenario: Search by one Editorial Recommendation
-    And The user select one of the Editorial Recommendation
+    Given The user select one of the Editorial Recommendation
     Then the system will display the correct recommendation
 
   Scenario: Test if the user can search by version number
-    When the user Choose "1" from drop down list
+    Given the user Choose "1" from drop down list
     Then All manuscripts which have one version shall be displayed
 
   Scenario: Test if the user can search by submission date
-    When the user Choose The submission date from "06/01/2018"
+    Given the user Choose The submission date from "06/01/2018"
     Then System should display manuscripts submitted from the date enetered till now
 
   Scenario: Test if the user can search by submission from & to dates
-    When the user Choose The submission date from "04/01/2018"
+    Given the user Choose The submission date from "04/01/2018"
     And the user Choose The submission date To "04/20/2018"
     Then System should display manuscripts submitted in that range
+
+  Scenario: Test if the user can search by Manuscript status
+
 
     ############# Invalid scenarios ##############
 
   Scenario Outline: Test searching by invalid manuscript ID
-    And the user clear manuscript ID field and enter invalid data <invalid_id>
+    Given the user clear manuscript ID field and enter invalid data <invalid_id>
     Then The system display <error>
     Examples:
       | invalid_id  | error                            |
@@ -67,7 +70,6 @@ Feature: I want to test search manuscript in mts
       | #@$#$#^%$^#%%$^%$%$^%&&^ | Your search returned no results. |
 
   Scenario: Search by invalid Manuscript Issue Name
-    Given Open Search Manuscript page and verify on the title
     Then enter invalid issue name
       | input           | error                            |
       | 123412312567833 | Your search returned no results. |
@@ -76,7 +78,6 @@ Feature: I want to test search manuscript in mts
       | -4153829        | Your search returned no results. |
 
   Scenario: Search by invalid Journal SubCode
-    Given Open Search Manuscript page and verify on the title
     Then enter invalid subcode
       | jsubcode        | subcodeerror                     |
       | 123412312567833 | Your search returned no results. |
@@ -85,8 +86,7 @@ Feature: I want to test search manuscript in mts
       | -4153829        | Your search returned no results. |
 
   Scenario: Search by invalid Manuscript Author(s)
-    Given Open Search Manuscript page and verify on the title
-    Given enter invalid authors
+    Then enter invalid authors
       | authors         | authrserror                      |
       | 123412312567833 | Your search returned no results. |
       | #@$#%$^%&&^     | Your search returned no results. |

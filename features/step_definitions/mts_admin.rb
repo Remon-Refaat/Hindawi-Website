@@ -10,7 +10,7 @@ Given /^enter valid email$/ do
   fill_in 'identifierId', :with => 'doaa.asl@hindawi.com'
 end
 
-Given /^click next$/ do
+And /^click next$/ do
   page.find(:id, 'identifierNext').click
 end
 
@@ -19,12 +19,12 @@ Given /^enter valid password$/ do
   fill_in 'password', :with => 'Doaa2020'
 end
 
-Given /^click next again$/ do
+And /^click next again$/ do
   find(:xpath, '//*[@id="passwordNext"]/content/span').click
   sleep 3
 end
 
-Given /^Open Search Manuscript page and verify on the title$/ do
+Then /^Open Search Manuscript page and verify on the title$/ do
   page.find(:xpath, '//a[text()="Search Manuscripts"]').click
   page_address = find(:xpath, '//h1[contains(text(),"Search Manuscripts")]').text
   if page_address == "Search Manuscripts"
@@ -44,7 +44,7 @@ Given /^the user enter valid Manuscript number "(.*)"$/ do |id|
   fill_in 'SearchFields_ManunscriptId', with: @ms_id
 end
 
-Given /^Click Search button$/ do
+And /^Click Search button$/ do
   page.find(:xpath, '//button[@id="submit"]').click
 end
 
@@ -101,7 +101,7 @@ end
 ################################################################
 
 
-Given /^Check select-clear all from editorial recommendation$/ do
+And /^Check select-clear all from editorial recommendation$/ do
   step %Q{Open Search Manuscript page and verify on the title}
   find(:xpath, "//input[@id='chkAll']").set(true)
 end
@@ -204,7 +204,7 @@ end
 ##############################################################
 
 Given /^the user Choose The submission date from "(.*)"$/ do |from|
-  @fromdate= from
+  @fromdate = from
   step %Q{Open Search Manuscript page and verify on the title}
   fill_in 'SubmissionFrom', with: @fromdate
 end
@@ -229,7 +229,7 @@ end
 ################ Search with Submission date range #################
 ####################################################################
 
-Given /^the user Choose The submission date To "(.*)"$/ do |to|
+And /^the user Choose The submission date To "(.*)"$/ do |to|
   @todate = to
   fill_in 'SubmissionTo', with: @todate
 end
@@ -286,11 +286,13 @@ Then ("The system redirect the user to Administrator Activities page") do
     puts "Wrong directing"
   end
 end
-<<<<<<< HEAD
-####################################################################################
-##Search by invalid Manuscript Issue Name##
+
+#################################################################################
+#################### Search by invalid Manuscript Issue Name ####################
+#################################################################################
 
 Then /^enter invalid issue name$/ do |table|
+  step %Q{Open Search Manuscript page and verify on the title}
   errors = []
   table.hashes.each do |row|
     find(:id, "SearchFields_IssueDescr").native.clear
@@ -305,9 +307,12 @@ Then /^enter invalid issue name$/ do |table|
   end
   expect(errors).to eq([])
 end
-#######################################################################################
-##Search by invalid Manuscript Journal SubCode##
+#################################################################################
+############### Search by invalid Manuscript Journal SubCode ###################
+#################################################################################
+
 Given /^enter invalid subcode$/ do |table|
+  step %Q{Open Search Manuscript page and verify on the title}
   errors2 = []
   table.hashes.each do |row|
     find(:xpath, "//*[@id='SearchFields_IssueDescr']").native.clear
@@ -323,9 +328,13 @@ Given /^enter invalid subcode$/ do |table|
   end
   expect(errors2).to eq([])
 end
-#########################################################################################
-##Search by invalid Manuscript Manuscripts Author(s)##
-Given /^enter invalid authors$/ do |table|
+
+#################################################################################
+##################Search by invalid Manuscript Manuscripts Author(s)#############
+#################################################################################
+
+Then /^enter invalid authors$/ do |table|
+  step %Q{Open Search Manuscript page and verify on the title}
   errors3 = []
   table.hashes.each do |row|
     find(:id, "SearchFields_JournalSubCode").native.clear
@@ -339,183 +348,180 @@ Given /^enter invalid authors$/ do |table|
       errors3 << "I was expecting #{row['authorserror']} for value #{row['authors']}"
     end
   end
-  expect(errors3).to eq ([])
+  expect(errors3).to eq([])
 end
 
-=======
 
+##############################################################################################################
+##############################################################################################################
+##############################################################################################################
 
+###############  EDit MS    ############
 
-
-
-
-
-###############EDit MS##################################
 #
-
-
-Given /^I open (.*)$/ do |url|
-  visit url
-end
-
-Given /^I enter username (.*)$/ do |username|
-  email = page.first("//div//input[@type='email']")
-  email.send_keys username
-
-end
-
-Given /^I click on Next button "(.*)"$/ do |btn|
-  page.find("//*[@id='#{btn}']/content/span").click
-  sleep 2
-end
-
-
-Given /^I enter password (.*)$/ do |pass|
-  passw = page.first("//input[@type='password']")
-  passw.send_keys pass
-end
-
-
-# And /^I pause$/ do
-#   print "Press any key to continue ...."
-#   STDIN.getc
+#
+# Given /^I open (.*)$/ do |url|
+#   visit url
+# end
+#
+# Given /^I enter username (.*)$/ do |username|
+#   email = page.first("//div//input[@type='email']")
+#   email.send_keys username
+#
+# end
+#
+# Given /^I click on Next button "(.*)"$/ do |btn|
+#   page.find("//*[@id='#{btn}']/content/span").click
+#   sleep 2
+# end
+#
+#
+# Given /^I enter password (.*)$/ do |pass|
+#   passw = page.first("//input[@type='password']")
+#   passw.send_keys pass
+# end
+#
+#
+# # And /^I pause$/ do
+# #   print "Press any key to continue ...."
+# #   STDIN.getc
+# # end
+#
+#
+# Given /^I navigate to EA account (.*)$/ do |url|
+#   visit url
+#   sleep 1
+# end
+#
+#
+# Given("Staff Manuscripts is opened") do
+#   # page.driver.browser.action.move_to(page.find("//a[@href='/editorial.staff/']").native).perform
+#   page.find(:xpath, "//a[@href='/editorial.staff/']").hover
+#   page.find("//*[@id='ctl00_NavigationBar1_LeftNavBar']/div/ul/li/ul/li[5]/a").click
+# end
+#
+# # When("I Click on MS ID randomly") do
+# #
+# #   page.all("//table[@id='MtsTable']/tbody/tr/td[3]/a").sample.click
+# #      sleep 2
+# # end
+#
+#
+# When("I choose random MS and click on Edit Manuscript") do
+#   loop do
+#     page.all("//table[@id='MtsTable']/tbody/tr/td[3]/a").sample.click
+#     sleep 1
+#     break if page.has_selector?("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]")
+#     page.evaluate_script('window.history.back()')
+#   end
+#   page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
+# end
+#
+# # Given ("I log out") do
+# # page.find("//*[@id='hindawi_links']/ul/li[2]/a").click
+# # end
+#
+#
+#
+# ####### Scenario 2: Verify that EA can update manuscripts details successfully  ################
+#
+# Given("I logged as EA") do
+#   step %Q{I navigate to EA account "#{url}"}
+# end
+#
+# Given("I opened Edit Manuscript") do
+#   step %Q{Staff Manuscripts is opened}
+#   step %Q{I choose random MS and click on Edit Manuscript}
+#
+# end
+# #
+# Given /^I fill the field Manuscript Title with (.*)$/ do |value|
+#   # fill_in "//div[contains(text(),'#{label}:')]/../following-sibling::td", :with => value
+#   #  fill_in label.gsub(' ', '_'), :with => value
+#   fill_in 'MsTitle', with: value
+#
+#   sleep 1
+# end
+#
+# Given("I select issue, Manuscript type, and recommendation from dropdown lists") do
+#
+#   find(:id, 'SelectedIssueId').all(:css, 'option')[rand(10)].select_option
+#   sleep 4
+#   type = find(:id, 'SelectedMsTypeId').all(:css, 'option')[rand(10)].select_option
+#   puts @mstype = type.text
+#   sleep 3
+#   find(:id, 'SelectedRecommendationId').all(:css, 'option')[rand(10)].select_option
+#   sleep 3
+# end
+#
+#
+# Given /^I upload Manuscript PDF File, Additional File, Supplementary Materials "(.*)"$/ do |path|
+#   page.find("//*[@id='form0']/table/tbody/tr[6]/td[2]/input[@type = 'file']").send_keys(path)
+#   sleep 2
+#
+#   page.find("//*[@id='form0']/table/tbody/tr[7]/td[2]/input[@type = 'file']").send_keys(path)
+#
+#   sleep 2
+#   page.find("//*[@id='form0']/table/tbody/tr[8]/td[2]/input[@type = 'file']").send_keys(path)
+#
+#   @supplementary = 'ssssssssssssssssssssssssssss'
+#   find("//*[@id='SupplementaryDescr']").send_keys(@supplementary)
+#   sleep 2
+#
+# end
+#
+# Given /^I check on the radio buttons of conflicts of interest, data availability statement, funding statement, and Select the answers of the questions "(.*)", "(.*)", and "(.*)"$/ do |ans1, ans2, ans3|
+#   types = ["Research Article", "Clinical Study", "Review Article", "Letter to the Editor", "Case Report"]
+#   page.find("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@value='#{ans1}']").click if types.include?("#{@mstype}")
+#   page.find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{ans2}']").click if types.first(2).include?("#{@mstype}")
+#   page.find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{ans3}']").click if types.first(2).include?("#{@mstype}")
+#
+#   # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@type='radio']")
+#   # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@type='radio']")
+#   # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@type='radio']")
+#
+#   sleep 3
+#   # find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{ans2}']").click if types.first(2).include?("#{@mstype}")
+#   # find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{ans3}']").click if types.first(2).include?("#{@mstype}")
+# end
+#
+# When("I click  on Update") do
+#   find("//*[@id='form0']/table/tbody/tr[31]/td[2]/input").click
+# end
+#
+# Then /^Validation "(.*)" should be displayed$/ do |message|
+#   msg = find("//*[@id ='sp_Message']/b").text
+#   puts expect(message == msg).to be true
+#   sleep 3
+# end
+#
+# Given ("Download additional file link should be displayed") do
+#   puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[7]/td[2]/a[1]")).to be true
+# end
+#
+#
+#
+# Given ("Delete link should be displayed beside additional file") do
+#   puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[7]/td[2]/a[2]")).to be true
+# end
+#
+#
+# Given ("Delete link should be displayed beside supplementary materials") do
+#   puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[8]/td[2]/a[2]")).to be true
+#   sleep 2
+# end
+#
+#
+# Given ("I Check new changes in MTs admin in MS details") do
+#   find("//*[@id='container']/div[9]/div[1]/a").click
+#   sleep 5
+#
+#   supp = find("//span[@id='descr']").text
+#   puts (expect supp==@supplementary).to be true
+#
+#   path = "#{ENV['DOWNLOAD_DIR']}/#{@ms_id}.v1.docx"
+#
+#   File.exist?(path).should be_truthy
+#   # clear_downloads
 # end
 
-
-Given /^I navigate to EA account (.*)$/ do |url|
-  visit url
-  sleep 1
-end
-
-
-Given("Staff Manuscripts is opened") do
-  # page.driver.browser.action.move_to(page.find("//a[@href='/editorial.staff/']").native).perform
-  page.find(:xpath, "//a[@href='/editorial.staff/']").hover
-  page.find("//*[@id='ctl00_NavigationBar1_LeftNavBar']/div/ul/li/ul/li[5]/a").click
-end
-
-# When("I Click on MS ID randomly") do
-#
-#   page.all("//table[@id='MtsTable']/tbody/tr/td[3]/a").sample.click
-#      sleep 2
-# end
-
-
-When("I choose random MS and click on Edit Manuscript") do
-  loop do
-    page.all("//table[@id='MtsTable']/tbody/tr/td[3]/a").sample.click
-    sleep 1
-    break if page.has_selector?("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]")
-    page.evaluate_script('window.history.back()')
-  end
-  page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
-end
-
-# Given ("I log out") do
-# page.find("//*[@id='hindawi_links']/ul/li[2]/a").click
-# end
-
-
-
-####### Scenario 2: Verify that EA can update manuscripts details successfully  ################
-
-Given("I logged as EA") do
-  step %Q{I navigate to EA account "#{url}"}
-end
-
-Given("I opened Edit Manuscript") do
-  step %Q{Staff Manuscripts is opened}
-  step %Q{I choose random MS and click on Edit Manuscript}
-
-end
-#
-Given /^I fill the field Manuscript Title with (.*)$/ do |value|
-  # fill_in "//div[contains(text(),'#{label}:')]/../following-sibling::td", :with => value
-  #  fill_in label.gsub(' ', '_'), :with => value
-  fill_in 'MsTitle', with: value
-
-  sleep 1
-end
-
-Given("I select issue, Manuscript type, and recommendation from dropdown lists") do
-
-  find(:id, 'SelectedIssueId').all(:css, 'option')[rand(10)].select_option
-  sleep 4
-  type = find(:id, 'SelectedMsTypeId').all(:css, 'option')[rand(10)].select_option
-  puts @mstype = type.text
-  sleep 3
-  find(:id, 'SelectedRecommendationId').all(:css, 'option')[rand(10)].select_option
-  sleep 3
-end
-
-
-Given /^I upload Manuscript PDF File, Additional File, Supplementary Materials "(.*)"$/ do |path|
-  page.find("//*[@id='form0']/table/tbody/tr[6]/td[2]/input[@type = 'file']").send_keys(path)
-  sleep 2
-
-  page.find("//*[@id='form0']/table/tbody/tr[7]/td[2]/input[@type = 'file']").send_keys(path)
-
-  sleep 2
-  page.find("//*[@id='form0']/table/tbody/tr[8]/td[2]/input[@type = 'file']").send_keys(path)
-
-  @supplementary = 'ssssssssssssssssssssssssssss'
-  find("//*[@id='SupplementaryDescr']").send_keys(@supplementary)
-  sleep 2
-
-end
-
-Given /^I check on the radio buttons of conflicts of interest, data availability statement, funding statement, and Select the answers of the questions "(.*)", "(.*)", and "(.*)"$/ do |ans1, ans2, ans3|
-  types = ["Research Article", "Clinical Study", "Review Article", "Letter to the Editor", "Case Report"]
-  page.find("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@value='#{ans1}']").click if types.include?("#{@mstype}")
-  page.find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{ans2}']").click if types.first(2).include?("#{@mstype}")
-  page.find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{ans3}']").click if types.first(2).include?("#{@mstype}")
-
-  # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@type='radio']")
-  # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@type='radio']")
-  # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@type='radio']")
-
-  sleep 3
-  # find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{ans2}']").click if types.first(2).include?("#{@mstype}")
-  # find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{ans3}']").click if types.first(2).include?("#{@mstype}")
-end
-
-When("I click  on Update") do
-  find("//*[@id='form0']/table/tbody/tr[31]/td[2]/input").click
-end
-
-Then /^Validation "(.*)" should be displayed$/ do |message|
-  msg = find("//*[@id ='sp_Message']/b").text
-  puts expect(message == msg).to be true
-  sleep 3
-end
-
-Given ("Download additional file link should be displayed") do
-  puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[7]/td[2]/a[1]")).to be true
-end
-
-
-
-Given ("Delete link should be displayed beside additional file") do
-  puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[7]/td[2]/a[2]")).to be true
-end
-
-
-Given ("Delete link should be displayed beside supplementary materials") do
-  puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[8]/td[2]/a[2]")).to be true
-  sleep 2
-end
-
-
-Given ("I Check new changes in MTs admin in MS details") do
-  find("//*[@id='container']/div[9]/div[1]/a").click
-  sleep 5
-
-  supp = find("//span[@id='descr']").text
-  puts (expect supp==@supplementary).to be true
-
-  path = "#{ENV['DOWNLOAD_DIR']}/#{@ms_id}.v1.docx"
-
-  File.exist?(path).should be_truthy
-  # clear_downloads
-end
->>>>>>> 07fc82f428a2d62c00cdcf3d805d6c3261cef9de
