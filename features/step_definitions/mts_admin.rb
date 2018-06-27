@@ -26,6 +26,7 @@ end
 
 Then /^Open Search Manuscript page and verify on the title$/ do
   page.find(:xpath, '//a[text()="Search Manuscripts"]').click
+  sleep 1
   page_address = find(:xpath, '//h1[contains(text(),"Search Manuscripts")]').text
   if page_address == "Search Manuscripts"
     puts "Search Manuscripts page opened"
@@ -40,8 +41,8 @@ end
 
 Given /^the user enter valid Manuscript number "(.*)"$/ do |id|
   step %Q{Open Search Manuscript page and verify on the title}
-  @ms_id = id
-  fill_in 'SearchFields_ManunscriptId', with: @ms_id
+  # @ms_id = id
+  fill_in 'SearchFields_ManunscriptId', with: id
 end
 
 And /^Click Search button$/ do
@@ -50,7 +51,7 @@ end
 
 Then /^the system will display the correct manuscript$/ do
   result = find(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[3]/div/a').text
-  if result.include? "@ms_id"
+  if result.include? "id"
     puts result
   end
 end
@@ -350,7 +351,44 @@ Then /^enter invalid authors$/ do |table|
   end
   expect(errors3).to eq([])
 end
+#################################################################################
+##################          search by Manuscript status           ###############
+#################################################################################
 
+Given /^check the manuscript status radio button$/ do
+  step %Q{Open Search Manuscript page and verify on the title}
+  @status = find(:xpath, '//input[3]')
+end
+
+Then /^the All Manuscripts should be selected by default$/ do
+  if @status.checked?
+    puts "All Manuscripts radio button is checked by default"
+  end
+end
+
+#################################################################################
+##################       Check counter display correct number     ###############
+#################################################################################
+
+Given /^check the counter of results$/ do
+  step %Q{the user Choose The submission date from "01/04/2018"}
+  step %Q{the user Choose The submission date To "02/04/2018"}
+  step %Q{Click Search button}
+  sleep 1
+  puts @counter=find(:xpath, '//span[@class="results"]').text
+  rows = all(:xpath,"//html//table[@id='MtsTable']//tr")
+  records = rows.length
+  @searchrecords = records - 1
+  puts @searchrecords
+end
+
+Then /^the counter should display the same number of rows$/ do
+  if @counter.include?("#{@searchrecords}")
+    puts "System display the correct counter"
+  else
+    puts "The system display the WRONG counter"
+  end
+end
 
 ##############################################################################################################
 ##############################################################################################################

@@ -3,6 +3,7 @@ Feature: I want to test search manuscript in mts
   Background:
     Given open Admin MTS
 
+  @doaa
   Scenario: Login, Open Search Manuscript page, Assert on pages titles
     Given enter valid email
     And click next
@@ -46,7 +47,13 @@ Feature: I want to test search manuscript in mts
     Then System should display manuscripts submitted in that range
 
   Scenario: Test if the user can search by Manuscript status
+    Given check the manuscript status radio button
+    Then the All Manuscripts should be selected by default
 
+  @doaa
+Scenario: Test if the system display correct counter of results
+  Given check the counter of results
+  Then the counter should display the same number of rows
 
     ############# Invalid scenarios ##############
 
