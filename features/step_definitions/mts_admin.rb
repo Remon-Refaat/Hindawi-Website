@@ -73,13 +73,6 @@ Then /^matched result opened$/ do
   end
 end
 
-Then /^Make sure that all fields are reset$/ do
-  #element['value']
-  # @tester.browser.find_element(:id => "id_of_text_field")['value'].should == 'test value'
-  element = driver.first(:id, "Authors_AuthorList_0__FirstName")
-  expect(element['value'].empty?).to be_truthy
-
-end
 
 ##################################################################
 ########### Search with one Editorial Recommendation #############
