@@ -50,10 +50,20 @@ Feature: I want to test search manuscript in mts
     Given check the manuscript status radio button
     Then the All Manuscripts should be selected by default
 
-  @doaa
 Scenario: Test if the system display correct counter of results
   Given check the counter of results
   Then the counter should display the same number of rows
+
+
+Scenario: Test if the navigation works correctly
+  Given the user select page number
+  Then the page number should be selected
+
+  @doaa
+  Scenario: the user can sort search result
+    Given the user click on header title
+    Then the system should sort the result
+
 
     ############# Invalid scenarios ##############
 

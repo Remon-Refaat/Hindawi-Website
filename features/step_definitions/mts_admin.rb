@@ -383,6 +383,55 @@ Then /^the counter should display the same number of rows$/ do
   end
 end
 
+#################################################################################
+################       Check Navigation works correctly           ###############
+#################################################################################
+Given /^the user select page number$/ do
+  step %Q{the user Choose The submission date from "01/04/2018"}
+  step %Q{the user Choose The submission date To "02/04/2018"}
+  step %Q{Click Search button}
+  sleep 1
+  find(:xpath, "//input[@type='submit'][@value='3']").click
+end
+
+Then /^the page number should be selected$/ do
+  expect(page.has_selector?(:xpath,"//span[@class='active']/input[@value='3']")).to be_truthy
+end
+
+
+#################################################################################
+##########           the user can sort search result               ##############
+#################################################################################
+
+
+Given /^the user click on header title$/ do
+  step %Q{the user Choose The submission date from "04/01/2018"}
+  step %Q{the user Choose The submission date To "04/02/2018"}
+  step %Q{Click Search button}
+  sleep 1
+  @befsort=[]
+  results=all(:xpath,"//table[@id='MtsTable']//tr//td[3]")
+  results.each do |row|
+    @befsort<<row.text
+  end
+  @befsort = @befsort.sort
+end
+
+Then /^the system should sort the result$/ do
+
+  find(:xpath, "//th[@class='title_cells_plus header'][contains(text(),'Manuscript No.')]").click
+  sleep 1
+  @aftersort=[]
+  sortedresults = all(:xpath,"//table[@id='MtsTable']//tr//td[3]")
+  sortedresults.each do |element|
+    @aftersort<<element.text
+    end
+  expect(@aftersort).to eq(@befsort)
+end
+
+
+
+
 ##############################################################################################################
 ##############################################################################################################
 ##############################################################################################################
