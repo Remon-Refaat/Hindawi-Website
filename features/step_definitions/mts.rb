@@ -255,3 +255,19 @@ And(/^Select a random Article Type$/) do
   @article = page.find("//*[@id='Manuscript_TypeId']/option[2]").text
   page.find("//*[@id='Manuscript_TypeId']/option[2]").click
 end
+
+Given /^Select Journal "(.*)"$/ do |journal|
+  page.find(:xpath, "//*[@id='LeftNavBar']/div/ul/li[1]/a").click
+  page.find(:xpath, "//a[contains(.,'#{journal}')]").click
+end
+
+And /^Hover on circles$/ do
+  page.first(:xpath,"//*[@id='tr_MsTypeSubmissionQuestion_MSType_2']/td/span[1]").hover
+    #OR
+  #page.driver.browser.action.move_to(page.find(:xpath,"//a[@href='/admin/']").native).perform
+end
+
+Then /^Information displayed$/ do
+  sleep 5
+  expect(page.has_selector?("//*[@id='tr_MsTypeSubmissionQuestion_MSType_2']/td/span/span/text()")).to be_truthy
+end
