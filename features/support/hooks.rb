@@ -9,9 +9,6 @@ def take_screenshot(scenario)
   page.save_screenshot(screenshot_path)
 end
 
-
-
-
 Around do |scenario,block|
   Timeout.timeout(600) do
     block.call
