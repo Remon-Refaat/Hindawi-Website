@@ -368,8 +368,8 @@ Given /^check the counter of results$/ do
   step %Q{the user Choose The submission date To "02/04/2018"}
   step %Q{Click Search button}
   sleep 1
-  puts @counter=find(:xpath, '//span[@class="results"]').text
-  rows = all(:xpath,"//html//table[@id='MtsTable']//tr")
+  puts @counter = find(:xpath, '//span[@class="results"]').text
+  rows = all(:xpath, "//html//table[@id='MtsTable']//tr")
   records = rows.length
   @searchrecords = records - 1
   puts @searchrecords
@@ -604,4 +604,128 @@ end
 #   File.exist?(path).should be_truthy
 #   # clear_downloads
 # end
+Given ("multi recommendations are selected Void and Reject") do
+  step %Q{Open Search Manuscript page and verify on the title}
+  find(:xpath, "//*[@id='form0']/div[3]/table/tbody/tr[2]/td/table/tbody/tr/td/div[4]/input").set(true)
+  find(:xpath, "//*[@id='form0']/div[3]/table/tbody/tr[2]/td/table/tbody/tr/td/div[9]/input").set(true)
+end
 
+Then /^the system will display correct recommendations "(.*)" and "(.*)"$/ do |recommendation1, recommendation2|
+  recommendations = all(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[8]')
+  recommendations.sample.text
+  if recommendations == recommendation1 || recommendation2
+    puts "Recommendations exist"
+  else
+    puts "Recommendations does not exist"
+  end
+end
+
+########################################################################################
+
+Given /^user Choose "(.*)" from drop down list$/ do |pages|
+  # step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{the user Choose The submission date from "04/01/2018"}
+  step %Q{the user Choose The submission date To "04/30/2018"}
+  select pages, from: "SearchFields_ManuscriptPerPage"
+  step %Q{Click Search button}
+  sleep 5
+end
+
+Then /^Results will be out of "(.*)"$/ do |pages|
+  result = find(:xpath, "//*[@id='form0']/div[3]/div[3]/span[1]").text
+  if result.include? "#{pages}"
+    puts "pager works"
+  else
+    puts "pager does not work"
+  end
+end
+###########################################################################################
+Given /^page selection is "(.*)"$/ do |default|
+  step %Q{Open Search Manuscript page and verify on the title}
+  result = find(:xpath, "//*[@id='SearchFields_ManuscriptPerPage']").text
+  if result.include? "#{default}"
+    puts "default is correct"
+  else
+    puts "default is not correct"
+  end
+end
+
+##############################################################
+################ Search with decision From date #################
+##############################################################
+
+Given /^the user Choose The decision date from "(.*)"$/ do |from|
+  @fromdate = from
+  step %Q{Open Search Manuscript page and verify on the title}
+  fill_in "RecommendationDateFrom", with: @fromdate
+end
+
+Then /^System should display manuscripts decision from the date enetered till now$/ do
+  step %Q{Click Search button}
+  result = all(:xpath, '//a[@class="topopup"]')
+  result.sample.click
+  sleep 5
+  decision_date = find(:xpath, "//td[contains(text(),'Recommendation')]//following-sibling::td").text
+  puts decision_date
+  date = Date.parse decision_date
+  datefrom = Date.parse @fromdate
+  puts date.strftime("%Y-%m-%d")
+  datefrom.strftime("%Y-%m-%d")
+  currentdate = Time.now.strftime("%Y-%m-%d")
+  todaydate = Date.parse currentdate
+  expect(date.between?(datefrom, todaydate)).to be_truthy
+end
+
+
+####################################################################
+################ Search with decision date range #################
+####################################################################
+
+And /^the user Choose The decision date To "(.*)"$/ do |to|
+  @todate = to
+  fill_in 'RecommendationDateTo', with: @todate
+end
+
+Then /^System should display manuscripts decision in that range$/ do
+  step %Q{Click Search button}
+  result = all(:xpath, '//a[@class="topopup"]')
+  result.sample.click
+  sleep 5
+  decision_date = find(:xpath, "//td[contains(text(),'Recommendation')]//following-sibling::td").text
+  date = Date.parse decision_date
+  puts date
+  datefrom = Date.strptime(@fromdate, "%m/%d/%Y")
+  dateto = Date.strptime(@todate, "%m/%d/%Y")
+  date.strftime("%Y-%m-%d")
+  datefrom.strftime("%Y-%m-%d")
+  dateto.strftime("%Y-%m-%d")
+  puts "#{datefrom}, #{dateto}"
+  expect(date.between?(datefrom, dateto)).to be_truthy
+end
+
+##############################################################
+################ Search with decision To date #################
+##############################################################
+And /^user Choose The decision date To "(.*)"$/ do |to|
+  step %Q{Open Search Manuscript page and verify on the title}
+  @todate = to
+  fill_in 'RecommendationDateTo', with: @todate
+end
+
+
+Then /^System should display manuscripts decision till To date$/ do
+  step %Q{Click Search button}
+  result = all(:xpath, '//a[@class="topopup"]')
+  result.sample.click
+  sleep 5
+  decision_date = find(:xpath, "//td[contains(text(),'Recommendation')]//following-sibling::td").text
+  puts decision_date
+  date = Date.parse decision_date
+  dateto = Date.parse @todate
+  puts date.strftime("%Y-%m-%d")
+  dateto.strftime("%Y-%m-%d")
+  first = "1900-01-01"
+  firstdate = Date.parse first
+  sleep 6
+  expect(date.between?(firstdate, dateto)).to be_truthy
+end
