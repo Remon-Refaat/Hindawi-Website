@@ -16,7 +16,6 @@ Feature: MTS Submission Page
 #      | //li[5]/a    | //h2              | Privacy Policy                      |
 #      | //li[6]/a    | //h2              | Article Processing Charges          |
 
-  @failed
   Scenario: Verify that the author can submit a manuscript successfully
     Given Add the data of all authors
       | First Name | Last Name | Email Address            | Affiliation      | Country | Corresponding Author |
@@ -31,6 +30,7 @@ Feature: MTS Submission Page
     And Select the answers of the questions "No", "Yes", and "Yes"
     When Press on "Submit"
     Then "Thank You for Submitting Your Manuscript" will be displayed
+    And   Should be found on the Author Activities list with  "Under Review" Status
 
   Scenario: Verify that the submitting author can cancel his\her submission process
     Given Choose 2 authors
@@ -165,11 +165,6 @@ Feature: MTS Submission Page
   When Press on "Submit"
   Then "Submission should be made by one of the authors of the article. Therefore your details should be included in the list of authors below" will be displayed
 
-   # Mai Scenario: Verify that the system make any manuscript submitted which included Sanctioned or Bad-debt author it's status as RTC
-
-   # Mai Scenario: Verify that the system make any manuscript submitted by Sanctioned or Bad-debt author it's status as RTC
-
-
   Scenario Outline: Verifying that submitting 3 Manuscripts or more at one journal will generate mail to the editorial staff
     Given Select Journal "Abstract and Applied Analysis"
     Given Choose 1 authors
@@ -189,17 +184,13 @@ Examples:
   | test3.docx | ManuscriptFile |
   | test4.docx | ManuscriptFile |
 
-   # Mai Scenario: Ensure that questions are displayed once the author selects certain types
-   # Mai Scenario: Verify that Justification field appears if select an answer that needs justification
-   # Mai Scenario: Check that the user who is submitting the Manuscript will be saved as a Submitting Author.
-
 
   Scenario: Verify that system provides information for each question.
     And Select a random Article Type
     And Hover on circles
     Then Information displayed
 
-  @emad
+
   Scenario Outline: Verify that the system accepts a manuscript with format PDF and Word
     Given Choose 1 authors
     Given Add the data of all authors
@@ -216,4 +207,107 @@ Examples:
   | test1.docx |
   | test1.doc  |
   | test1.pdf  |
+  | test1.rtf  |
 
+
+
+  Scenario Outline: Verify that the system make any manuscript submitted which included Sanctioned or Bad-debt author it's status as RTC
+    Given    Set the "remon.refaat@hindawi.com" as "<table>"
+     And     Choose 2 authors
+     And     Add the data of all authors
+       | First Name | Last Name | Email Address            | Affiliation | Country     | Corresponding Author |
+       | M          | X         | remon.refaat@hindawi.com | 1           | Afghanistan | No                   |
+       | O          | Y         | ali_sltani4@yahoo.com    | 2           | Australia   | Yes                  |
+
+    And   Add title of the manuscript
+    And   Select a random Article Type
+    And   Choose a file "test1.docx" for "ManuscriptFile"
+    And   Select the answers of the questions "No", "Yes", and "Yes"
+    And   Press on "Submit"
+    And   Delete "remon.refaat@hindawi.com" From "<table>" table
+    Then  "Thank You for Submitting Your Manuscript" will be displayed
+    And   Should be found on the Author Activities list with  "Rejected" Status
+
+  Examples:
+    | table      |
+    | Bad-debt   |
+    | Sanctioned |
+
+
+  Scenario Outline: Verify that the system make any manuscript submitted by Sanctioned or Bad-debt author it's status as RTC
+    Given   Set the "remon.refaat@hindawi.com" as "<table>"
+    And     Choose 1 authors
+    And     Add the data of all authors
+      | First Name | Last Name | Email Address             | Affiliation | Country     | Corresponding Author |
+      | O          | Y         | remon.refaat@hindawi.com    | 2           | Australia   | Yes                  |
+    And   Add title of the manuscript
+    And   Select a random Article Type
+    And   Choose a file "test1.docx" for "ManuscriptFile"
+    And   Select the answers of the questions "No", "Yes", and "Yes"
+    And   Press on "Submit"
+    And   Delete "remon.refaat@hindawi.com" From "<table>" table
+    Then "Thank You for Submitting Your Manuscript" will be displayed
+    And   Should be found on the Author Activities list with  "Rejected" Status
+    Examples:
+      | table      |
+      | Bad-debt   |
+      | Sanctioned |
+
+  Scenario: Ensure that questions are displayed once the author selects certain types
+    Given   Select Journal "Advances in Medicine"
+    And     I verify the appearance of questions
+      | type                 |questions|
+      | Review Article      |  Do any authors have conflicts of interest to declare?       |
+      | Letter to the Editor|  Do any authors have conflicts of interest to declare?       |
+      | Research Article    |  Do any authors have conflicts of interest to declare?, Have you included a data availability statement in your manuscript?, Have you provided a funding statement in your manuscript?     |
+      | Clinical Study      |  Do any authors have conflicts of interest to declare?, Have you included a data availability statement in your manuscript?, Have you provided a funding statement in your manuscript?           |
+    And      back to Submit a Manuscript page
+    And      Select Journal "Case Reports in Critical Care"
+    And     I verify the appearance of questions
+      | type                 |questions|
+      | Case Report          |  Do any authors have conflicts of interest to declare? |
+
+
+  Scenario: Verify that Justification field appears if select an answer that needs justification
+    Given    Select Journal "Advances in Medicine"
+    And      I verify the appearance of text box to enter your justification
+      | type                 | q1  | q2 | q3 |
+      | Research Article     | Yes | No | No |
+      | Letter to the Editor | Yes |    |    |
+      | Review Article       | Yes |    |    |
+      | Clinical Study       | Yes | No | No |
+    And  back to Submit a Manuscript page
+    And  Select Journal "Case Reports in Critical Care"
+    And     I verify the appearance of text box to enter your justification
+      | type        | q1  |
+      | Case Report | Yes |
+
+
+  Scenario: Verify that the system prevent submitting the manuscript without adding text to Justification field
+    Given   Choose "1" authors
+    And     Add the data of all authors
+      | First Name | Last Name | Email Address            | Affiliation | Country     | Corresponding Author |
+      | M          | X         | remon.refaat@hindawi.com | 1           | Afghanistan |                    |
+    And   Add title of the manuscript
+    And   Select a random Article Type
+    And   Choose a file "test1.docx" for "ManuscriptFile"
+    And   Select the answers of the questions "Yes", "No", and "No"
+    And   Press on "Submit"
+    Then  "Please complete the submission questions answers." will be displayed
+
+
+  Scenario: Check that the user who is submitting the Manuscript will be saved as a Submitting Author.
+    Given   Choose "2" authors
+    And     Add the data of all authors
+      | First Name | Last Name | Email Address            | Affiliation | Country     | Corresponding Author |
+      | Remon      | Refaa     | remon.refaat@hindawi.com | 1           | Afghanistan | No                   |
+      | Mai        | Fathy     | Mai.fathy@hindawi.com    | test        | Afghanistan | Yes                  |
+    And   Add title of the manuscript
+    And   Select a random Article Type
+    And   Choose a file "test1.docx" for "ManuscriptFile"
+    And   Select the answers of the questions "No", "Yes", and "Yes"
+    And   Press on "Submit"
+    Then "Thank You for Submitting Your Manuscript" will be displayed
+    And   Should be found on the Author Activities list with  "Under Review" Status
+    And   Open manuscript details page
+    Then  The submitting author "remon.refaat@hindawi.com" should be the displayed with bold style

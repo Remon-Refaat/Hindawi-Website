@@ -26,6 +26,35 @@ Given /^Add the data of all authors$/ do |table|
   end
 end
 
+
+Given /^login As Author via "(.*)" with "(.*)", "(.*)" and "(.*)"$/  do |url,admin_email, admin_pass, role_email|
+  visit url+"/"+admin_email+"/"+admin_pass+"/"+role_email
+end
+
+
+Given /^Set the "(.*)" as "(.*)"$/ do |email,table|
+  u_id = 0
+  user_id= select_from_dbs("Select UserId From Users where Email ='#{email}'")
+  user_id.each do |row|
+    u_id = row["UserId"]
+  end
+      case table
+   when "Bad-debt"
+     execute_dbs_query("INSERT INTO BadDebts
+   VALUES (#{u_id},'CRIS',964625,300,'USD','2018-01-20');")
+     puts "Bad-debt is set"
+   when "Sanctioned"
+     execute_dbs_query("INSERT INTO BlackListedAuthors
+        VALUES (#{u_id},'2013-08-20' ,null,'',123456,null);")
+     puts "Sanctioned is set"
+   end
+   end
+Given /^Select Journal "(.*)"$/ do |journal|
+  page.find(:xpath, "//*[@id='LeftNavBar']/div/ul/li[1]/a").click
+  page.find(:xpath, "//a[contains(.,'#{journal}')]").click
+  page_title = find(:xpath, '//*[@id="container"]/div[5]/h1').text
+  check_for_manuscript_page_title(page_title)
+end
 ##############################
 ########## And ###############
 ##############################
@@ -43,14 +72,8 @@ And /^Select a random journal$/ do
   journals = page.all(:xpath,"//div[@id='myul']//a")
   journals[rand(journals.length)].click
   page_title = find(:xpath, '//*[@id="container"]/div[5]/h1').text
-  if (page_title).include?("Select an Issue")
-    click_link 'Regular Issues'
-  elsif (page_title).include?("Select a Subject Area")
-    find(:xpath,'//*[@id="container"]/div[5]/div/div[1]/ul/li[1]/a').click
-    if (page_title).include?("Select an Issue")
-    click_link 'Regular Issues'
-    end
-    end
+  check_for_manuscript_page_title(page_title)
+
   end
 And /^Choose "(\d+)" authors$/ do |num|
   first(:xpath, "//div/select/option[#{num}]").click
@@ -93,6 +116,146 @@ end
 
 And /^Download the pdf file$/ do
   find("//div[1]/a/img").click
+end
+
+And /^Should be found on the Author Activities list with  "(.*)" Status$/ do |status|
+  ms_id = find(:xpath, "//*[@id='container']/div[5]/div[2]/div/p[1]/a").text
+  click_link 'Author Activities'
+  expect(find(:xpath, "//*[@id='container']/div[5]/div/table/tbody/tr[1]/td[1]/span").text.include?(ms_id)).to be_truthy
+  expect(find(:xpath,"//*[@id='container']/div[5]/div/table/tbody/tr[1]/td[4]").text).to eql(status)
+end
+
+
+And /^I verify the appearance of questions$/ do |table|
+  errors = []
+  table.rows.each do |type,questions|
+    case type
+    when "Research Article"
+      step %Q{Choose the Article type "#{type}"}
+      all_questions = get_displayed_questions(2)
+      if all_questions != questions
+        errors << "not matched question for type "#{type}"}
+      end
+    when "Review Article"
+      step %Q{Choose the Article type "#{type}"}
+      all_questions = get_displayed_questions(3)
+      if all_questions != questions
+        errors << "not matched question for type #{type}"
+      end
+    when "Letter to the Editor"
+      step %Q{Choose the Article type "#{type}"}
+      all_questions = get_displayed_questions(4)
+      if all_questions != questions
+        errors << "not matched question for type #{type}"
+      end
+    when "Clinical Study"
+      step %Q{Choose the Article type "#{type}"}
+      all_questions = get_displayed_questions(19)
+      if all_questions != questions
+        errors << "not matched question for type #{type}"
+      end
+    when "Case Report"
+      step %Q{Choose the Article type "#{type}"}
+      all_questions = get_displayed_questions(20)
+      if all_questions != questions
+        errors << "not matched question for type #{type}"
+      end
+    end
+  end
+  expect(errors).to eq([])
+end
+
+And ("back to Submit a Manuscript page") do
+
+  within(:id, "navigation") do
+    click_link 'Submit a Manuscript'
+
+  end
+end
+
+And /^Delete "(.*)" From "(.*)" table$/ do |email,table|
+  u_id = 0
+  user_id= select_from_dbs("Select UserId From Users where Email ='#{email}'")
+  user_id.each do |row|
+    u_id = row["UserId"]
+  end
+  case table
+  when "Bad-debt"
+     execute_dbs_query("DELETE FROM BadDebts
+     WHERE UserId='#{u_id}'")
+    puts "deleted"
+  when "Sanctioned"
+    execute_dbs_query("DELETE FROM BlackListedAuthors
+     WHERE UserId='#{u_id}'")
+    puts "deleted"
+  end
+end
+And(/^Select a random Article Type$/) do
+  @article = page.find("//*[@id='Manuscript_TypeId']/option[2]").text
+  page.find("//*[@id='Manuscript_TypeId']/option[2]").click
+end
+
+
+
+And /^Hover on circles$/ do
+  page.first(:xpath,"//*[@id='tr_MsTypeSubmissionQuestion_MSType_2']/td/span[1]").hover
+  #OR
+  #page.driver.browser.action.move_to(page.find(:xpath,"//a[@href='/admin/']").native).perform
+end
+And /^Choose the Article type "(.*)"$/ do |type|
+  @article = type
+  select type, from: 'Manuscript_TypeId'
+end
+
+
+And /I verify the appearance of text box to enter your justification$/ do |table|
+  errors = []
+  table.rows.each do |type,q1,q2, q3|
+    case type
+    when "Research Article"
+      step %Q{Choose the Article type "#{(type)}"}
+      if  !(textbox_has_displayed(0,q1))
+        errors << "textbox not displayed "
+      end
+      if  !(textbox_has_displayed(1,q2))
+        errors << "textbox not displayed "
+      end
+      if  !(textbox_has_displayed(2,q3))
+        errors << "textbox not displayed "
+      end
+    when "Review Article"
+      step %Q{Choose the Article type "#{type}"}
+      if  !(textbox_has_displayed(3,q1))
+        errors << "textbox not displayed "
+      end
+    when "Letter to the Editor"
+      step %Q{Choose the Article type "#{type}"}
+      if  !(textbox_has_displayed(4,q1))
+        errors << "textbox not displayed "
+      end
+    when "Clinical Study"
+      step %Q{Choose the Article type "#{type}"}
+      if  !(textbox_has_displayed(5,q1))
+        errors << "textbox not displayed "
+      end
+      if  !(textbox_has_displayed(6,q2))
+        errors << "textbox not displayed "
+      end
+      if  !(textbox_has_displayed(7,q3))
+        errors << "textbox not displayed "
+      end
+    when "Case Report"
+      step %Q{Choose the Article type "#{type}"}
+      if  !(textbox_has_displayed(8,q1))
+        errors << "textbox not displayed "
+      end
+    end
+  end
+  expect(errors).to eq([])
+end
+
+And ("Open manuscript details page") do
+  find(:xpath, "//*[@id='container']/div[5]/div/table/tbody/tr[1]/td[1]/a/img").click
 end
 
 ##############################
@@ -250,24 +413,53 @@ Then /^Verify that the file is downloaded$/ do
   clear_downloads
 end
 
-
-And(/^Select a random Article Type$/) do
-  @article = page.find("//*[@id='Manuscript_TypeId']/option[2]").text
-  page.find("//*[@id='Manuscript_TypeId']/option[2]").click
+Then /^The submitting author "(.*)" should be the displayed with bold style$/ do |email|
+  full_name = 0
+  user_name= select_from_dbs("Select FullName From Users where Email ='#{email}'")
+  user_name.each do |row|
+    full_name = row["FullName"]
+  end
+  expect(find(:xpath, "//*[@id='content']/div/table/tbody//b").text).to eql(full_name)
 end
 
-Given /^Select Journal "(.*)"$/ do |journal|
-  page.find(:xpath, "//*[@id='LeftNavBar']/div/ul/li[1]/a").click
-  page.find(:xpath, "//a[contains(.,'#{journal}')]").click
-end
-
-And /^Hover on circles$/ do
-  page.first(:xpath,"//*[@id='tr_MsTypeSubmissionQuestion_MSType_2']/td/span[1]").hover
-    #OR
-  #page.driver.browser.action.move_to(page.find(:xpath,"//a[@href='/admin/']").native).perform
-end
 
 Then /^Information displayed$/ do
   sleep 5
   expect(page.has_selector?("//*[@id='tr_MsTypeSubmissionQuestion_MSType_2']/td/span/span/text()")).to be_truthy
+end
+
+
+
+################### DEF#######################
+
+def check_for_manuscript_page_title(page_title)
+  if (page_title).include?("Select an Issue")
+    click_link 'Regular Issues'
+  elsif (page_title).include?("Select a Subject Area")
+    find(:xpath,'//*[@id="container"]/div[5]/div/div[1]/ul/li[1]/a').click
+    if (page_title).include?("Select an Issue")
+      click_link 'Regular Issues'
+    end
+  end
+
+
+  def get_displayed_questions (ms_type_number)
+    all_questions = []
+    questions = page.all(:xpath, "//*[@id='tr_MsTypeSubmissionQuestion_MSType_#{ms_type_number}']/td")
+    questions.each do |element|
+      all_questions << element.text
+    end
+    return all_questions.join(", ")
+  end
+
+  def textbox_has_displayed (index, answer )
+    find(:id,"SubmissionQuestionList[#{index}].Answer_#{answer}").click
+    if page.has_selector?(:xpath, "//*[@id='SubmissionQuestionList[#{index}].Comment']")
+      return true
+    else
+      return false
+    end
+  end
+
+
 end
