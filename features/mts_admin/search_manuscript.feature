@@ -3,7 +3,7 @@ Feature: I want to test search manuscript in mts
   Background:
     Given open Admin MTS
 
-  @doaa
+  @noura
   Scenario: Login, Open Search Manuscript page, Assert on pages titles
     Given enter valid email
     And click next
@@ -39,6 +39,12 @@ Feature: I want to test search manuscript in mts
     Given the user enter valid Manuscript title
     Then the matched result is displayed
 
+
+  Scenario: Search with Valid Manuscript Issue Name
+    Given the user enter valid Manuscript Issue Name
+    And  click on MS ID
+    Then system displays correct issue name
+
   Scenario: Search by invalid Manuscript Issue Name
     Then enter invalid issue name
       | input           | error                            |
@@ -46,6 +52,10 @@ Feature: I want to test search manuscript in mts
       | #@$#%$^%&&^     | Your search returned no results. |
       | <>noura<>       | Your search returned no results. |
       | -4153829        | Your search returned no results. |
+
+  Scenario: Search with Valid Journal SubCode
+    Given the user enter valid Journal SubCode
+    Then system will display Journal SubCode
 
   Scenario: Search by invalid Journal SubCode
     Then enter invalid subcode
@@ -55,8 +65,19 @@ Feature: I want to test search manuscript in mts
       | <>noura<>       | Your search returned no results. |
       | -4153829        | Your search returned no results. |
 
+
+  Scenario: Search with Valid Manuscript Author
+    Given the user enter valid Manuscript Author
+    Then system will display correct Manuscript Author
+
+
+  Scenario: Search with Valid  multi manuscript authors
+    Given the user enter valid Manuscript Authors
+    Then system will display correct Manuscript Authors
+
+
 #error
-  Scenario: Search by invalid Manuscript Author(s)
+  Scenario: Search by invalid Manuscript Author
     Then enter invalid authors
       | authors         | authrserror                      |
       | 123412312567833 | Your search returned no results. |
@@ -64,7 +85,16 @@ Feature: I want to test search manuscript in mts
       | <>noura<>       | Your search returned no results. |
       | -4153829        | Your search returned no results. |
 
+
+  Scenario: Search with  valid Combination data
+    Given the user enter valid data in Manuscript number "8950516"
+    And the user enter valid data in Manuscript Author "Xiaowen Jiang"
+    And the user enter valid data Journal SubCode "ECAM"
+    Then the system will display the correct manuscript
+
   Scenario: Search by invalid Manuscript title, Manuscript issue & Manuscript issue name
+
+
     Then The system validate the following data
       | invalid_data             | error                            |
       | 123456783354165465464563 | Your search returned no results. |
@@ -72,7 +102,7 @@ Feature: I want to test search manuscript in mts
       | <><><<<<<<<<<<<<<Asl<><> | Your search returned no results. |
       | #@$#$#^%$^#%%$^%$%$^%&&^ | Your search returned no results. |
 
-    @doaa
+
   Scenario: Verify that the user can select/clear all editorial recommendation
     Given Check select-clear all from editorial recommendation
     Then All editorial recommendation should be selected
@@ -148,7 +178,16 @@ Feature: I want to test search manuscript in mts
       | Elapsed Time             | 9  |
 
 
+  Scenario: Test manuscript id is hyperlinked and opens MS details
+    Given the user enter valid Manuscript number "4153829"
+    And Click Search button
+    Then check if manuscript id is hyperlinked
+    And click on MS ID
+    Then  MS details page is opened with MS "4153829" in title
 
-
-
-
+  @noura
+  Scenario: Verify that system views new manuscripts submitted
+    Given new manuscript is submitted
+    When user search by Manuscript ID
+    And Click Search button
+    Then the system will display the correct manuscript

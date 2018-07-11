@@ -72,8 +72,8 @@ end
 ##################################################
 
 Given /^the user enter valid Manuscript number "(.*)"$/ do |id|
+  @new_id= id
   step %Q{Open Search Manuscript page and verify on the title}
-  # @ms_id = id
   fill_in 'SearchFields_ManunscriptId', with: id
 end
 
@@ -83,7 +83,7 @@ end
 
 Then /^the system will display the correct manuscript$/ do
   result = find(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[3]/div/a').text
-  if result.include? "id"
+  if result.include? @new_id
     puts result
   end
 end
@@ -120,7 +120,31 @@ Then /^the matched result is displayed$/ do
     expect(element.text.include? 'Transmitter').to be_truthy
   end
 end
+############################################################
+########### Search with Valid Manuscript Issue Name ######## ##No Issue Name to search with valid data##
+############################################################
 
+Given /^the user enter valid Manuscript Issue Name$/ do
+  step %Q{Open Search Manuscript page and verify on the title}
+  fill_in 'SearchFields_IssueDescr', with: "Advanced Optimization Techniques and Their Applications in Civil Engineering"
+  step %Q{Click Search button}
+
+end
+
+And /^click on MS ID$/ do
+  find(:xpath, "//*[@id='MtsTable']/tbody/tr[1]/td[3]/div/a").click
+  sleep 10
+end
+
+Then /^system displays correct issue name$/ do
+  error = []
+  name = find(:xpath, "//td[contains(text(),'Issue')]//following-sibling::td").text
+  begin
+    expect(name.text.include? 'Advanced Optimization Techniques and Their Applications in Civil Engineering').to be_truthy
+  rescue
+    error << "wrong issue name"
+  end
+end
 
 #################################################################################
 #################### Search by invalid Manuscript Issue Name ####################
@@ -142,6 +166,24 @@ Then /^enter invalid issue name$/ do |table|
   end
   expect(errors).to eq([])
 end
+
+###########################################################
+########### Search with Valid Journal SubCode #############
+############################################################
+
+Given /^the user enter valid Journal SubCode$/ do
+  step %Q{Open Search Manuscript page and verify on the title}
+  fill_in 'SearchFields_JournalSubCode', with: "JCSE"
+  step %Q{Click Search button}
+end
+
+Then /^system will display Journal SubCode$/ do
+  result = all(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[1]')
+  result.each do |element|
+    expect(element.text.include? 'JCSE').to be_truthy
+  end
+end
+
 #################################################################################
 ############### Search by invalid Manuscript Journal SubCode ###################
 #################################################################################
@@ -164,8 +206,54 @@ Given /^enter invalid subcode$/ do |table|
   expect(errors2).to eq([])
 end
 
+
+###########################################################
+########### Search with Valid Manuscript Author(s)#########
+###########################################################
+
+Given /^the user enter valid Manuscript Author$/ do
+  step %Q{Open Search Manuscript page and verify on the title}
+  fill_in 'SearchFields_AuthorsName', with: "Kangling Wang"
+  step %Q{Click Search button}
+  step %Q{I pause}
+end
+
+Then /^system will display correct Manuscript Author$/ do
+  result = all(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[4]/div[2]')
+  result.each do |element|
+    expect(element.text.include? "Kangling Wang").to be_truthy
+  end
+end
+
+########################################################
+######Search with Valid  multi manuscript authors ######
+########################################################
+
+Given /^the user enter valid Manuscript Authors$/ do
+  step %Q{Open Search Manuscript page and verify on the title}
+  fill_in 'SearchFields_AuthorsName', with: "MOHREM ABDELKRIM, CHETATE Boukhemis, GUIA Houssem Eddine"
+  step %Q{Click Search button}
+  sleep 5
+end
+
+Then /^system will display correct Manuscript Authors$/ do
+
+  expect(page.has_selector?(:xpath, '//*[@id="MtsTable"]/tbody')).to be_truthy
+
+  begin
+    result = all(:xpath, "//*[@id='MtsTable']/tbody/tr/td[4]/div[2]/i")
+    result.each do |element|
+      expect(element.text.include? "MOHREM ABDELKRIM, CHETATE Boukhemis, GUIA Houssem Eddine").to be_truthy
+      puts "True"
+    rescue
+      expect(page.has_selector?(:xpath, "//b[contains(text(),'Your search returned no results.')]")).to be_falsy
+      puts "this message appears : Your search returned no results."
+    end
+  end
+end
+
 #################################################################################
-##################Search by invalid Manuscript Manuscripts Author(s)#############
+################# Search by invalid Manuscript Manuscripts Author ###############
 #################################################################################
 
 Then /^enter invalid authors$/ do |table|
@@ -184,6 +272,24 @@ Then /^enter invalid authors$/ do |table|
     end
   end
   expect(errors3).to eq([])
+end
+
+
+##############################################################
+######## Search with  valid Combination data #################
+##############################################################
+Given /^the user enter valid data in Manuscript number "(.*)"$/ do |id|
+  step %Q{Open Search Manuscript page and verify on the title}
+  find(:xpath, "//*[@id='SearchFields_ManunscriptId']").send_keys id
+end
+
+And /^the user enter valid data in Manuscript Author "(.*)"$/ do |author|
+  find(:xpath, "//*[@id='SearchFields_AuthorsName']").send_keys author
+end
+
+And /^the user enter valid data Journal SubCode "(.*)"$/ do |jsubcode|
+  find(:xpath, '//*[@id="SearchFields_JournalSubCode"]').send_keys jsubcode
+  step %Q{Click Search button}
 end
 
 ##############################################################
@@ -596,11 +702,75 @@ Given /^the user click on header titles and the system should sort the result$/ 
 end
 
 
-##############################################################################################################
-##############################################################################################################
-##############################################################################################################
+#################################################################################
+########## Test manuscript id is hyperlinked and opens MS details ##############
+#################################################################################
+# RSpec matcher for links
+# See {Capybara::Node::Matchers#has_link?}
 
-###############  EDit MS    ############
+
+Then /^check if manuscript id is hyperlinked$/ do
+  def have_link(locator = nil, options = {}, &optional_filter_block)
+    locator, options = nil, locator if locator.is_a? Hash
+    HaveSelector.new(:link, locator, options, &optional_filter_block)
+
+    link = find(:xpath, "//*[@id='MtsTable']/tbody/tr/td[3]/div/a").have_link
+    error = []
+    begin
+      expect(link.has_selector?(:xpath, "//*[@id='MtsTable']/tbody/tr/td[3]/div/a")).to be_truthy
+    rescue
+      error << "no hyperlink"
+    end
+  end
+end
+
+
+Then /^MS details page is opened with MS (.*) in title$/ do |vf|
+  title = find(:xpath, "//*[@id='popup_content']/div/h1").text
+  if title.include? vf
+    puts "MS details opened"
+  else
+    puts "MS details not opened"
+  end
+end
+
+#########################################################
+####Verify that system views new manuscripts submitted###
+#########################################################
+Given /^new manuscript is submitted$/ do
+  step %Q{Navigate to "http://beta.mts.hindawi.com/remon.refaat@hindawi.com/123456"}
+  step %Q{Click on "Submit a Manuscript"}
+  step %Q{Select a random journal}
+  step %Q{Add the data of all authors}, table(%q{
+  | First Name | Last Name | Email Address            | Affiliation      | Country | Corresponding Author |
+  | Remon      | Refaat    | remon.refaat@hindawi.com | Cairo University | Egypt   | No                   |
+  | Mohamed    | Emad      | mohamed.emad@hindawi.com | Cairo University | USA     | No                   |
+  | Mai        | Fathy     | mai.fathy@hindawi.com    | Cairo University | Algeria | Yes                  |})
+  step %Q{Add title of the manuscript}
+  step %Q{Select a random Article Type}
+  step %Q{Choose a file "test1.docx" for "ManuscriptFile"}
+  step %Q{Choose a file "test2.docx" for "CoverLetterReviewReport"}
+  step %Q{Choose a file "test3.docx" for "SupplementaryMaterial"}
+  step %Q{Select the answers of the questions "No", "Yes", and "Yes"}
+  step %Q{Press on "Submit"}
+  step %Q{"Thank You for Submitting Your Manuscript" will be displayed}
+  puts @ms_id = find(:xpath, "//*[@id='container']/div[5]/div[2]/div/p[1]/a").text
+end
+When /^user search by Manuscript ID$/ do
+  step %Q{open Admin MTS}
+# step %Q{enter valid email}
+# step %Q{click next}
+# step %Q{enter valid password}
+# step %Q{click next again}
+# step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{the user enter valid Manuscript number "#{@ms_id}"}
+
+  sleep 20
+end
+##############################################################################################################
+##############################################################################################################
+##############################################################################################################
+############### EDit MS ############
 
 #
 #
@@ -768,3 +938,5 @@ end
 #   File.exist?(path).should be_truthy
 #   # clear_downloads
 # end
+# #############
+
