@@ -1,6 +1,6 @@
-####################################################################################
-########### Login, Open Search Manuscript page, Assert on pages titles #############
-####################################################################################
+############################################################
+########### Login, Open Search Manuscript page #############
+############################################################
 
 Given /^open Admin MTS$/ do
   visit "http://beta.admin.mts.hindawi.com/"
@@ -24,9 +24,17 @@ And /^click next again$/ do
   sleep 3
 end
 
-Then /^Open Search Manuscript page and verify on the title$/ do
+Then /^Open Search Manuscript page$/ do
   page.find(:xpath, '//a[text()="Search Manuscripts"]').click
   sleep 1
+end
+
+##################################################################
+####### Verify that the page address is displayed correctly ######
+##################################################################
+
+Given /^check tha page address$/ do
+  step %Q{Open Search Manuscript page}
   page_address = find(:xpath, '//h1[contains(text(),"Search Manuscripts")]').text
   if page_address == "Search Manuscripts"
     puts "Search Manuscripts page opened"
@@ -40,7 +48,7 @@ end
 ####################################################################################
 
 Given ("The user click on back to general activities") do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   find(:xpath, '//*[@id="form0"]/div[2]/a').click
 end
 
@@ -57,9 +65,8 @@ end
 ################## Search with empty fields ##################
 ##############################################################
 
-
 Then /^a validation message should appear$/ do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   step %Q{Click Search button}
   validation = page.find(:xpath, '//*[@id="form0"]/div[3]/b').text
   if validation.include? "You must specify at least one field to search."
@@ -72,8 +79,8 @@ end
 ##################################################
 
 Given /^the user enter valid Manuscript number "(.*)"$/ do |id|
-  @new_id= id
-  step %Q{Open Search Manuscript page and verify on the title}
+  @new_id = id
+  step %Q{Open Search Manuscript page}
   fill_in 'SearchFields_ManunscriptId', with: id
 end
 
@@ -82,10 +89,17 @@ And /^Click Search button$/ do
 end
 
 Then /^the system will display the correct manuscript$/ do
-  result = find(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[3]/div/a').text
-  if result.include? @new_id
-    puts result
+  errors = []
+  @result = all(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[3]/div/a')
+  @result.each do |msid|
+    @result = msid.text
   end
+  begin
+    expect(@result.include? @new_id).to be_truthy
+  rescue RSpec::Expectations::ExpectationNotMetError
+    errors << "MS ID #{@result} is displayed wrongly"
+  end
+  expect(errors).to eq []
 end
 
 ##############################################################
@@ -93,7 +107,7 @@ end
 ##############################################################
 
 Given /^the user clear manuscript ID field and enter invalid data (.*)$/ do |invalid_id|
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   find(:xpath, '//*[@id="SearchFields_ManunscriptId"]').send_keys invalid_id
   step %Q{Click Search button}
 end
@@ -108,24 +122,97 @@ end
 ############################################################
 
 Given /^the user enter valid Manuscript title$/ do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   fill_in 'SearchFields_Title', with: "Transmitter"
   step %Q{Click Search button}
-  step %Q{I pause}
 end
 
 Then /^the matched result is displayed$/ do
-  result = all(:xpath, '//div[@class="paper_title"]/b')
-  result.each do |element|
-    expect(element.text.include? 'Transmitter').to be_truthy
+  errors = []
+  @mstitle = all(:xpath, '//div[@class="paper_title"]/b')
+  @mstitle.each do |element|
+    @mstitle = element.text
+  end
+  begin
+    expect(@mstitle.include? 'Transmitter').to be_truthy
+  rescue RSpec::Expectations::ExpectationNotMetError
+    errors << "MS title #{@mstitle} is displayed wrongly"
+  end
+  expect(errors).to eq []
+end
+
+############################################################################
+#################### Search by invalid Manuscript Title ####################
+############################################################################
+
+Given /^enter invalid Manuscript title$/ do |invalid_title|
+  step %Q{Open Search Manuscript page}
+  invalid_title.hashes.each do |row|
+    errors=[]
+    find(:id, "SearchFields_Title").native.clear
+    find(:id, "SearchFields_Title").send_keys row['invalid_title']
+    step %Q{Click Search button}
+    sleep 2
+    begin
+      result = find(:xpath, '//*[@id="form0"]/div[3]/b').text
+      expect(result).to eq(row['error'])
+    rescue
+      errors << "I got the wrong error for value #{row['invalid_title']}"
+    end
   end
 end
+
+#################################################
+########### Search with Valid issue #############
+#################################################
+
+Given /^the user enter valid issue$/ do
+  step %Q{Open Search Manuscript page}
+  fill_in 'SearchFields_IssueId', with: "NPBCC"
+  step %Q{Click Search button}
+end
+
+Then /^the matched issue should be displayed$/ do
+  errors = []
+  @msissue = all(:xpath, "//html//table[@id='MtsTable']//td[2]")
+  @msissue.each do |element|
+    @msissue = element.text
+  end
+  begin
+    expect(@msissue.include? 'NPBCC').to be_truthy
+  rescue RSpec::Expectations::ExpectationNotMetError
+    errors << "MS title #{@msissue} is displayed wrongly"
+  end
+  expect(errors).to eq []
+end
+
+#################################################################
+#################### Search by invalid issue ####################
+#################################################################
+
+Given /^enter invalid issue$/ do |invalid_issue|
+  step %Q{Open Search Manuscript page}
+  invalid_issue.hashes.each do |row|
+    find(:id, "SearchFields_IssueId").native.clear
+    find(:id, "SearchFields_IssueId").send_keys row['invalid_issue']
+    step %Q{Click Search button}
+    sleep 2
+    begin
+      result = find(:xpath, '//*[@id="form0"]/div[3]/b').text
+      expect(result).to eq(row['error'])
+    rescue
+      errors << "I got the wrong error for value #{row['invalid_issue']}"
+    end
+  end
+end
+
+
 ############################################################
-########### Search with Valid Manuscript Issue Name ######## ##No Issue Name to search with valid data##
+########### Search with Valid Manuscript Issue Name ########
 ############################################################
 
 Given /^the user enter valid Manuscript Issue Name$/ do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   fill_in 'SearchFields_IssueDescr', with: "Advanced Optimization Techniques and Their Applications in Civil Engineering"
   step %Q{Click Search button}
 
@@ -151,7 +238,7 @@ end
 #################################################################################
 
 Then /^enter invalid issue name$/ do |table|
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   errors = []
   table.hashes.each do |row|
     find(:id, "SearchFields_IssueDescr").native.clear
@@ -189,7 +276,7 @@ end
 #################################################################################
 
 Given /^enter invalid subcode$/ do |table|
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   errors2 = []
   table.hashes.each do |row|
     find(:xpath, "//*[@id='SearchFields_IssueDescr']").native.clear
@@ -206,16 +293,14 @@ Given /^enter invalid subcode$/ do |table|
   expect(errors2).to eq([])
 end
 
-
 ###########################################################
 ########### Search with Valid Manuscript Author(s)#########
 ###########################################################
 
 Given /^the user enter valid Manuscript Author$/ do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   fill_in 'SearchFields_AuthorsName', with: "Kangling Wang"
   step %Q{Click Search button}
-  step %Q{I pause}
 end
 
 Then /^system will display correct Manuscript Author$/ do
@@ -230,7 +315,7 @@ end
 ########################################################
 
 Given /^the user enter valid Manuscript Authors$/ do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   fill_in 'SearchFields_AuthorsName', with: "MOHREM ABDELKRIM, CHETATE Boukhemis, GUIA Houssem Eddine"
   step %Q{Click Search button}
   sleep 5
@@ -253,11 +338,11 @@ Then /^system will display correct Manuscript Authors$/ do
 end
 
 #################################################################################
-################# Search by invalid Manuscript Manuscripts Author ###############
+##################Search by invalid Manuscript Manuscripts Author(s)#############
 #################################################################################
 
 Then /^enter invalid authors$/ do |table|
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   errors3 = []
   table.hashes.each do |row|
     find(:id, "SearchFields_JournalSubCode").native.clear
@@ -274,14 +359,14 @@ Then /^enter invalid authors$/ do |table|
   expect(errors3).to eq([])
 end
 
-
 ##############################################################
 ######## Search with  valid Combination data #################
 ##############################################################
-Given /^the user enter valid data in Manuscript number "(.*)"$/ do |id|
-  step %Q{Open Search Manuscript page and verify on the title}
-  find(:xpath, "//*[@id='SearchFields_ManunscriptId']").send_keys id
-end
+
+# Given /^the user enter valid data in Manuscript number "(.*)"$/ do |id|
+#   step %Q{Open Search Manuscript page}
+#   find(:xpath, "//*[@id='SearchFields_ManunscriptId']").send_keys id
+# end
 
 And /^the user enter valid data in Manuscript Author "(.*)"$/ do |author|
   find(:xpath, "//*[@id='SearchFields_AuthorsName']").send_keys author
@@ -297,7 +382,7 @@ end
 ##############################################################
 
 Given /^the user clear the field and enter invalid data "(.*)"$/ do |invalid_data|
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   find(:xpath, '//input[@id="SearchFields_Title"]').send_keys invalid_data
   find(:xpath, "//input[@id='SearchFields_IssueId']").send_keys invalid_data
   find(:xpath, '//input[@id="SearchFields_IssueDescr"]').send_keys invalid_data
@@ -321,17 +406,14 @@ Then /^The system validate the following data$/ do |table|
   expect(errors).to eq []
 end
 
-
 ################################################################
 ########### select/clear all editorial recommendation ##########
 ################################################################
 
-
 And /^Check select-clear all from editorial recommendation$/ do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   find(:xpath, "//input[@id='chkAll']").set(true)
 end
-
 
 Then /^All editorial recommendation should be selected$/ do
   errors = []
@@ -357,7 +439,7 @@ Then /^All editorial recommendation should be unselected$/ do
     recommendations = all(:xpath, '//input[@name="checklistRecommendation"]')
     recommendations.each do |element|
       begin
-        !expect(element.checked?).to be_truthy
+        expect(element.checked?).to be_falsy
         puts "Recommendation Unselected"
       rescue RSpec::Expectations::ExpectationNotMetError
         errors << "Errors #{element.text}"
@@ -367,12 +449,13 @@ Then /^All editorial recommendation should be unselected$/ do
   puts errors
   expect(errors).to eq([])
 end
+
 ##################################################################
 ########### Search with one Editorial Recommendation #############
 ##################################################################
 
 Given /^The user select one of the Editorial Recommendation$/ do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   find(:xpath, "//input[@value='EdMajor']").set(true)
   step %Q{Click Search button}
 end
@@ -387,7 +470,7 @@ end
 ######################################################################
 
 Given ("multi recommendations are selected Void and Reject") do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   find(:xpath, "//*[@id='form0']/div[3]/table/tbody/tr[2]/td/table/tbody/tr/td/div[4]/input").set(true)
   find(:xpath, "//*[@id='form0']/div[3]/table/tbody/tr[2]/td/table/tbody/tr/td/div[9]/input").set(true)
 end
@@ -407,7 +490,7 @@ end
 ###############################################################
 
 Given /^the user Choose "(.*)" from drop down list$/ do |version|
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   select version, from: 'SearchFields_VersionNumber'
   find(:xpath, "//input[@value='EdMajor']").set(true)
   step %Q{Click Search button}
@@ -423,8 +506,9 @@ end
 ###############################################################
 ########### Test that the default paging is 50 ################
 ###############################################################
+
 Given /^page selection is "(.*)"$/ do |default|
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   result = find(:xpath, "//*[@id='SearchFields_ManuscriptPerPage']").text
   if result.include? "#{default}"
     puts "default is correct"
@@ -433,12 +517,12 @@ Given /^page selection is "(.*)"$/ do |default|
   end
 end
 
-###############################################################
-######   the user can search by manuscripts/page     ##########
-###############################################################
+######################################################
+###### the user can search by manuscripts/page #######
+######################################################
 
 Given /^user Choose "(.*)" from drop down list$/ do |pages|
-  # step %Q{Open Search Manuscript page and verify on the title}
+  # step %Q{Open Search Manuscript page}
   step %Q{the user Choose The submission date from "04/01/2018"}
   step %Q{the user Choose The submission date To "04/30/2018"}
   select pages, from: "SearchFields_ManuscriptPerPage"
@@ -461,7 +545,7 @@ end
 
 Given /^the user Choose The submission date from "(.*)"$/ do |from|
   @fromdate = from
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   fill_in 'SubmissionFrom', with: @fromdate
 end
 
@@ -508,13 +592,64 @@ Then /^System should display manuscripts submitted in that range$/ do
   expect(date.between?(datefrom, dateto)).to be_truthy
 end
 
+#################################################################
+################ Search with Submission to date #################
+#################################################################
+
+Then /^System should display manuscripts submitted till To date$/ do
+  find(:xpath, "//input[@value='EdReject']").set(true)
+  step %Q{Click Search button}
+  result = all(:xpath, '//a[@class="topopup"]')
+  result.sample.click
+  sleep 5
+  submission_date = find(:xpath, "//td[contains(text(),'Submitted On')]//following-sibling::td").text
+  puts submission_date
+  date = Date.parse submission_date
+  dateto = Date.parse @todate
+  puts date.strftime("%Y-%m-%d")
+  dateto.strftime("%Y-%m-%d")
+  from = "01/01/1900"
+  fromdate = Date.parse from
+  sleep 6
+  expect(date.between?(fromdate, dateto)).to be_truthy
+end
+
+###################################################################
+############## Search with invalid Submission date ################
+###################################################################
+
+Given /^the user Choose invalid submission date from and to then the system should validate$/ do |table|
+  step %Q{Open Search Manuscript page}
+  table.hashes.each do |row|
+
+    fill_in 'SubmissionFrom', with: row['date_from']
+    fill_in 'SubmissionTo', with: row['date_to']
+    step %Q{Click Search button}
+
+    errors = []
+    begin
+      result = find(:xpath, '//*[@id="form0"]/div[3]/b').text
+      expect(result).to eq(row['validation_message'])
+      !if result == row['validation_message']
+         break if page.has_selector?("//b[contains(text(),'You are not authorized to view this page.')]")
+         page.evaluate_script('window.history.back()')
+       else
+         puts "Right Validation Message"
+       end
+    rescue
+      errors << "I got the error #{row['validation_message']} for value #{row['date_from']}"
+    end
+    expect(errors).to eq []
+  end
+end
+
 #############################################################
-################ Search with decision From date #################
-##############################################################
+################ Search with decision From date #############
+#############################################################
 
 Given /^the user Choose The decision date from "(.*)"$/ do |from|
   @fromdate = from
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   fill_in "RecommendationDateFrom", with: @fromdate
 end
 
@@ -535,9 +670,9 @@ Then /^System should display manuscripts decision from the date enetered till no
 end
 
 
-####################################################################
+##################################################################
 ################ Search with decision date range #################
-####################################################################
+##################################################################
 
 And /^the user Choose The decision date To "(.*)"$/ do |to|
   @todate = to
@@ -562,10 +697,10 @@ Then /^System should display manuscripts decision in that range$/ do
 end
 
 ##############################################################
-################ Search with decision To date #################
+################ Search with decision To date ################
 ##############################################################
-And /^user Choose The decision date To "(.*)"$/ do |to|
-  step %Q{Open Search Manuscript page and verify on the title}
+Given /^user Choose The decision date To "(.*)"$/ do |to|
+  step %Q{Open Search Manuscript page}
   @todate = to
   fill_in 'RecommendationDateTo', with: @todate
 end
@@ -588,12 +723,12 @@ Then /^System should display manuscripts decision till To date$/ do
   expect(date.between?(firstdate, dateto)).to be_truthy
 end
 
-#################################################################################
-##################          search by Manuscript status           ###############
-#################################################################################
+##############################################################
+#### Verify All Manuscripts should be selected by default #####
+##############################################################
 
 Given /^check the manuscript status radio button$/ do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   @status = find(:xpath, '//input[3]')
 end
 
@@ -603,9 +738,62 @@ Then /^the All Manuscripts should be selected by default$/ do
   end
 end
 
-#################################################################################
-##################       Check counter display correct number     ###############
-#################################################################################
+
+###############################################
+######## Search by archived manuscript ########
+###############################################
+
+Given /^select archived manuscript in the dbs$/ do
+  manuscript = select_from_dbs("select top 1 * from manuscripts where IsArchived = '1'")
+  manuscript.each do |column|
+    puts @x = column["ManuscriptId"]
+  end
+end
+
+And /^search by selected manuscript id and archived status$/ do
+  step %Q{the user enter valid Manuscript number "#{@x}"}
+  find(:xpath, "//div[@class='search_status_radio']//input[2]").click
+  step %Q{Click Search button}
+end
+
+Then /^the manuscript id should displayed in search result as archived$/ do
+  msid = all(:xpath, "//tbody//td[3]//div[1]//a[1]")
+  y = msid.sample
+  id = y.text
+  if id.include?(@x)
+    puts "Manuscript is archived"
+  end
+end
+
+###############################################
+######## Search by current manuscript  ########
+###############################################
+
+Given /^select current manuscript in the dbs$/ do
+  manuscript = select_from_dbs("select top 1 * from manuscripts where IsArchived = '0'")
+  manuscript.each do |column|
+    puts @y = column["ManuscriptId"]
+  end
+end
+
+And /^search by selected manuscript id and current status$/ do
+  step %Q{the user enter valid Manuscript number "#{@y}"}
+  find(:xpath, "//div[@class='search_status_radio']//input[1]").click
+  step %Q{Click Search button}
+end
+
+Then /^the manuscript id should displayed in search result as current$/ do
+  msid = all(:xpath, "//tbody//td[3]//div[1]//a[1]")
+  y = msid.sample
+  id = y.text
+  if id.include?(@y)
+    puts "Manuscript is Current"
+  end
+end
+
+##############################################################
+######### Check counter display correct number ###############
+##############################################################
 
 Given /^check the counter of results$/ do
   step %Q{the user Choose The submission date from "01/04/2018"}
@@ -627,9 +815,9 @@ Then /^the counter should display the same number of rows$/ do
   end
 end
 
-#################################################################################
-################       Check Navigation works correctly           ###############
-#################################################################################
+###################################################################
+################  Check Navigation works correctly  ###############
+###################################################################
 Given /^the user select page number$/ do
   step %Q{the user Choose The submission date from "01/04/2018"}
   step %Q{the user Choose The submission date To "02/04/2018"}
@@ -671,10 +859,9 @@ Then /^the system should sort the result$/ do
   expect(@aftersort).to eq(@befsort)
 end
 
-#################################################################################
-########## the user can sort  all columns in search result         ##############
-#################################################################################
-
+########################################################################
+########## the user can sort  all columns in search result #############
+########################################################################
 
 Given /^the user click on header titles and the system should sort the result$/ do |table|
   step %Q{the user Choose The submission date from "04/01/2018"}
@@ -683,31 +870,34 @@ Given /^the user click on header titles and the system should sort the result$/ 
   sleep 1
   @befsort = []
   @aftersort = []
-
+  errors = []
   table.hashes.each do |row|
-    results = all(:xpath, "//th[@class='title_cells_plus header'][contains(text(),'#{row['header']}')]/../../../tbody/tr/td[#{row['td']}]")
+    results = all(:xpath, "//th[contains(@class,'title_cells_')][contains(text(),'#{row['header']}')]/../../../tbody/tr/td[#{row['td']}]")
     results.each do |row|
       @befsort << row.text
-      @befsort = @befsort.sort
-      find(:xpath, "//th[@class='title_cells_plus header'][contains(text(),'#{row['header']}')]").click
-      sleep 1
+    end
 
-      sortedresults = all(:xpath, "//th[@class='title_cells_plus header'][contains(text(),'#{row['header']}')]/../../../tbody/tr/td[#{row['td']}]")
-      sortedresults.each do |element|
-        @aftersort << element.text
-        expect(@aftersort).to eq(@befsort)
-      end
+    @befsort = @befsort.sort
+
+    find(:xpath, "//th[contains(@class,'title_cells_')][contains(text(),'#{row['header']}')]").click
+    sleep 1
+    sortedresults = all(:xpath, "//th[contains(@class,'title_cells_')][contains(text(),'#{row['header']}')]/../../../tbody/tr/td[#{row['td']}]")
+    sortedresults.each do |element|
+      @aftersort << element.text
+    end
+
+    begin
+      expect(@aftersort).to eq(@befsort)
+    rescue RSpec::Expectations::ExpectationNotMetError
+      errors << "Sorting of the header #{row['header']} is not correct"
     end
   end
+  expect(errors).to eq []
 end
-
 
 #################################################################################
 ########## Test manuscript id is hyperlinked and opens MS details ##############
 #################################################################################
-# RSpec matcher for links
-# See {Capybara::Node::Matchers#has_link?}
-
 
 Then /^check if manuscript id is hyperlinked$/ do
   def have_link(locator = nil, options = {}, &optional_filter_block)
@@ -731,6 +921,115 @@ Then /^MS details page is opened with MS (.*) in title$/ do |vf|
     puts "MS details opened"
   else
     puts "MS details not opened"
+  end
+end
+
+#################################################################################
+########## the user can downloads the cover letter for any manuscript ###########
+#################################################################################
+
+Given /^the user select random record and click on cover letter hyperlink$/ do
+  step %Q{the user enter valid Manuscript number "3192074"}
+  step %Q{Click Search button}
+  sleep 2
+  find(:xpath, "//*[@id='MtsTable']/tbody/tr/td[6]/a").click
+end
+
+Then /^the Cover Letter should be downloaded successfully "(.*?)"$/ do |coverletter|
+  var = %x[ IF EXIST #{ENV['DOWNLOAD_DIR']}/"coverletter" ECHO "coverletter" exists ]
+  puts var
+  puts Dir["C:\Users\doaa.asl\Downloads#{coverletter}"].last
+end
+
+####################################################################
+########## Elapsed time with Not finalize recommendation ###########
+####################################################################
+
+Given /^the user search by not finalized recommendation$/ do
+  step %Q{the user Choose The submission date from "04/01/2018"}
+  step %Q{the user Choose The submission date To "04/02/2018"}
+  select '1', from: 'SearchFields_VersionNumber'
+  find(:xpath, "//input[@value='Not']").set(true)
+  step %Q{Click Search button}
+end
+
+Then /^check submission date and calculate the elapsed time$/ do
+  submission_date = find(:xpath, "//td[contains(text(),'Submitted On')]//following-sibling::td").text
+  date = Date.parse submission_date
+  puts date.strftime("%Y-%m-%d")
+  currentdate = Time.now.strftime("%Y-%m-%d")
+  todaydate = Date.parse currentdate
+  elapsed_time = todaydate - date
+  puts elapsed_time
+
+  system_elapsed_time = find(:xpath, "//tr[1]//td[9]").text
+  if elapsed_time.to_s.include? (system_elapsed_time.to_s)
+    puts "System display correct elapsed time which equal #{system_elapsed_time}"
+  else
+    puts "System display wrong elapsed time"
+  end
+end
+
+###########################################################
+########## Elapsed time with any recommendation ###########
+###########################################################
+
+Given /^the user search by one recommendation$/ do
+  step %Q{the user Choose The submission date from "03/01/2018"}
+  step %Q{the user Choose The submission date To "04/02/2018"}
+ find(:xpath, "//input[@id='SearchFields_ManunscriptId']").click
+  select '1', from: 'SearchFields_VersionNumber'
+  find(:xpath, "//input[@value='EiCPublish']").set(true)
+  step %Q{Click Search button}
+  step %Q{click on MS ID}
+end
+
+Then /^check submission and recommendation date then calculate the elapsed time$/ do
+  submission_date = find(:xpath, "//td[contains(text(),'Submitted On')]//following-sibling::td").text
+  date = Date.parse submission_date
+  puts date.strftime("%Y-%m-%d")
+
+  recommendation_date = find(:xpath,"//td[contains(text(),'Recommendation')]//following-sibling::td").text
+  rec_date = Date.parse recommendation_date
+  puts rec_date.strftime("%Y-%m-%d")
+
+  elapsed_time = rec_date - date
+  puts elapsed_time
+
+  system_elapsed_time = find(:xpath, "//tr[1]//td[9]").text
+  if elapsed_time.to_s.include? (system_elapsed_time.to_s)
+    puts "System display correct elapsed time which equal #{system_elapsed_time}"
+  else
+    puts "System display wrong elapsed time"
+  end
+end
+
+#######################################################################
+########## Verify that Report column display correct numbers ##########
+#######################################################################
+
+Then /^report column display correct numbers$/ do
+  puts system_reports = find(:xpath, "//tr[1]//td[7]").text
+  step %Q{click on MS ID}
+  table_rows = all(:xpath, "//div[@id='toPopup']//table[@id='MtsTable']//tbody//td[2]")
+  puts assigned_reviewers = table_rows.length #
+
+  decline = all(:xpath, "//tbody//tr//td[4][contains(text(),'Declined')]")
+  declined_reviewers = decline.length
+  puts all_except_declined = assigned_reviewers - declined_reviewers #
+
+  agree = all(:xpath, "//tbody//tr//td[4][contains(text(),'Agreed')]|//tbody//tr//td[4][contains(text(),'Submitted')]")
+  puts agreed_reviewers = agree.length #
+
+  submitted = all(:xpath, "//tbody//tr//td[4][contains(text(),'Submitted')]")
+  puts submitted_reviewers = submitted.length #
+
+  expected_result = ("#{submitted_reviewers}/#{agreed_reviewers}/#{all_except_declined}/#{assigned_reviewers}").to_s
+  # expect(system_reports).to eq(expected_result).to be_truthy
+  if system_reports==expected_result
+    puts "System display right report #{system_reports}"
+  else
+    puts "System display wrong report #{system_reports}"
   end
 end
 
@@ -758,185 +1057,6 @@ Given /^new manuscript is submitted$/ do
 end
 When /^user search by Manuscript ID$/ do
   step %Q{open Admin MTS}
-# step %Q{enter valid email}
-# step %Q{click next}
-# step %Q{enter valid password}
-# step %Q{click next again}
-# step %Q{Open Search Manuscript page and verify on the title}
   step %Q{the user enter valid Manuscript number "#{@ms_id}"}
-
   sleep 20
 end
-##############################################################################################################
-##############################################################################################################
-##############################################################################################################
-############### EDit MS ############
-
-#
-#
-# Given /^I open (.*)$/ do |url|
-#   visit url
-# end
-#
-# Given /^I enter username (.*)$/ do |username|
-#   email = page.first("//div//input[@type='email']")
-#   email.send_keys username
-#
-# end
-#
-# Given /^I click on Next button "(.*)"$/ do |btn|
-#   page.find("//*[@id='#{btn}']/content/span").click
-#   sleep 2
-# end
-#
-#
-# Given /^I enter password (.*)$/ do |pass|
-#   passw = page.first("//input[@type='password']")
-#   passw.send_keys pass
-# end
-#
-#
-# # And /^I pause$/ do
-# #   print "Press any key to continue ...."
-# #   STDIN.getc
-# # end
-#
-#
-# Given /^I navigate to EA account (.*)$/ do |url|
-#   visit url
-#   sleep 1
-# end
-#
-#
-# Given("Staff Manuscripts is opened") do
-#   # page.driver.browser.action.move_to(page.find("//a[@href='/editorial.staff/']").native).perform
-#   page.find(:xpath, "//a[@href='/editorial.staff/']").hover
-#   page.find("//*[@id='ctl00_NavigationBar1_LeftNavBar']/div/ul/li/ul/li[5]/a").click
-# end
-#
-# # When("I Click on MS ID randomly") do
-# #
-# #   page.all("//table[@id='MtsTable']/tbody/tr/td[3]/a").sample.click
-# #      sleep 2
-# # end
-#
-#
-# When("I choose random MS and click on Edit Manuscript") do
-#   loop do
-#     page.all("//table[@id='MtsTable']/tbody/tr/td[3]/a").sample.click
-#     sleep 1
-#     break if page.has_selector?("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]")
-#     page.evaluate_script('window.history.back()')
-#   end
-#   page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
-# end
-#
-# # Given ("I log out") do
-# # page.find("//*[@id='hindawi_links']/ul/li[2]/a").click
-# # end
-#
-#
-#
-# ####### Scenario 2: Verify that EA can update manuscripts details successfully  ################
-#
-# Given("I logged as EA") do
-#   step %Q{I navigate to EA account "#{url}"}
-# end
-#
-# Given("I opened Edit Manuscript") do
-#   step %Q{Staff Manuscripts is opened}
-#   step %Q{I choose random MS and click on Edit Manuscript}
-#
-# end
-# #
-# Given /^I fill the field Manuscript Title with (.*)$/ do |value|
-#   # fill_in "//div[contains(text(),'#{label}:')]/../following-sibling::td", :with => value
-#   #  fill_in label.gsub(' ', '_'), :with => value
-#   fill_in 'MsTitle', with: value
-#
-#   sleep 1
-# end
-#
-# Given("I select issue, Manuscript type, and recommendation from dropdown lists") do
-#
-#   find(:id, 'SelectedIssueId').all(:css, 'option')[rand(10)].select_option
-#   sleep 4
-#   type = find(:id, 'SelectedMsTypeId').all(:css, 'option')[rand(10)].select_option
-#   puts @mstype = type.text
-#   sleep 3
-#   find(:id, 'SelectedRecommendationId').all(:css, 'option')[rand(10)].select_option
-#   sleep 3
-# end
-#
-#
-# Given /^I upload Manuscript PDF File, Additional File, Supplementary Materials "(.*)"$/ do |path|
-#   page.find("//*[@id='form0']/table/tbody/tr[6]/td[2]/input[@type = 'file']").send_keys(path)
-#   sleep 2
-#
-#   page.find("//*[@id='form0']/table/tbody/tr[7]/td[2]/input[@type = 'file']").send_keys(path)
-#
-#   sleep 2
-#   page.find("//*[@id='form0']/table/tbody/tr[8]/td[2]/input[@type = 'file']").send_keys(path)
-#
-#   @supplementary = 'ssssssssssssssssssssssssssss'
-#   find("//*[@id='SupplementaryDescr']").send_keys(@supplementary)
-#   sleep 2
-#
-# end
-#
-# Given /^I check on the radio buttons of conflicts of interest, data availability statement, funding statement, and Select the answers of the questions "(.*)", "(.*)", and "(.*)"$/ do |ans1, ans2, ans3|
-#   types = ["Research Article", "Clinical Study", "Review Article", "Letter to the Editor", "Case Report"]
-#   page.find("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@value='#{ans1}']").click if types.include?("#{@mstype}")
-#   page.find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{ans2}']").click if types.first(2).include?("#{@mstype}")
-#   page.find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{ans3}']").click if types.first(2).include?("#{@mstype}")
-#
-#   # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@type='radio']")
-#   # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@type='radio']")
-#   # puts 'no questions' if page.not_to have_selector("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@type='radio']")
-#
-#   sleep 3
-#   # find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{ans2}']").click if types.first(2).include?("#{@mstype}")
-#   # find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{ans3}']").click if types.first(2).include?("#{@mstype}")
-# end
-#
-# When("I click  on Update") do
-#   find("//*[@id='form0']/table/tbody/tr[31]/td[2]/input").click
-# end
-#
-# Then /^Validation "(.*)" should be displayed$/ do |message|
-#   msg = find("//*[@id ='sp_Message']/b").text
-#   puts expect(message == msg).to be true
-#   sleep 3
-# end
-#
-# Given ("Download additional file link should be displayed") do
-#   puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[7]/td[2]/a[1]")).to be true
-# end
-#
-#
-#
-# Given ("Delete link should be displayed beside additional file") do
-#   puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[7]/td[2]/a[2]")).to be true
-# end
-#
-#
-# Given ("Delete link should be displayed beside supplementary materials") do
-#   puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[8]/td[2]/a[2]")).to be true
-#   sleep 2
-# end
-#
-#
-# Given ("I Check new changes in MTs admin in MS details") do
-#   find("//*[@id='container']/div[9]/div[1]/a").click
-#   sleep 5
-#
-#   supp = find("//span[@id='descr']").text
-#   puts (expect supp==@supplementary).to be true
-#
-#   path = "#{ENV['DOWNLOAD_DIR']}/#{@ms_id}.v1.docx"
-#
-#   File.exist?(path).should be_truthy
-#   # clear_downloads
-# end
-# #############
-
