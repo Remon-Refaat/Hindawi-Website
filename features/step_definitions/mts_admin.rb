@@ -24,17 +24,15 @@ And /^click next again$/ do
   sleep 3
 end
 
-Then /^Open Search Manuscript page$/ do
-  page.find(:xpath, '//a[text()="Search Manuscripts"]').click
-  sleep 1
-end
 
 ##################################################################
 ####### Verify that the page address is displayed correctly ######
 ##################################################################
-
-Given /^check tha page address$/ do
-  step %Q{Open Search Manuscript page}
+Given /^Open Search Manuscript page$/ do
+  page.find(:xpath, '//a[text()="Search Manuscripts"]').click
+  sleep 1
+end
+Then /^check tha page address$/ do
   page_address = find(:xpath, '//h1[contains(text(),"Search Manuscripts")]').text
   if page_address == "Search Manuscripts"
     puts "Search Manuscripts page opened"
@@ -148,7 +146,7 @@ end
 Given /^enter invalid Manuscript title$/ do |invalid_title|
   step %Q{Open Search Manuscript page}
   invalid_title.hashes.each do |row|
-    errors=[]
+    errors = []
     find(:id, "SearchFields_Title").native.clear
     find(:id, "SearchFields_Title").send_keys row['invalid_title']
     step %Q{Click Search button}
@@ -259,7 +257,7 @@ end
 ############################################################
 
 Given /^the user enter valid Journal SubCode$/ do
-  step %Q{Open Search Manuscript page and verify on the title}
+  step %Q{Open Search Manuscript page}
   fill_in 'SearchFields_JournalSubCode', with: "JCSE"
   step %Q{Click Search button}
 end
@@ -363,20 +361,58 @@ end
 ######## Search with  valid Combination data #################
 ##############################################################
 
-# Given /^the user enter valid data in Manuscript number "(.*)"$/ do |id|
-#   step %Q{Open Search Manuscript page}
-#   find(:xpath, "//*[@id='SearchFields_ManunscriptId']").send_keys id
-# end
-
 And /^the user enter valid data in Manuscript Author "(.*)"$/ do |author|
   find(:xpath, "//*[@id='SearchFields_AuthorsName']").send_keys author
+@auth=author
 end
 
 And /^the user enter valid data Journal SubCode "(.*)"$/ do |jsubcode|
   find(:xpath, '//*[@id="SearchFields_JournalSubCode"]').send_keys jsubcode
+@subcode=jsubcode
   step %Q{Click Search button}
 end
 
+
+Then /^the system will display the correct manuscript with valid combination$/ do
+errors = []
+@result = all(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[3]/div/a')
+@result2 = all(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[4]/div[2]/i')
+@result3 = all(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[1]')
+@result.each do |msid|
+  @result = msid.text
+end
+@result2.each do |author|
+  @result2 = author.text
+end
+@result3.each do |jsubcode|
+  @result3 = jsubcode.text
+end
+begin
+  puts expect(@result.include? @new_id).to be_truthy
+  puts expect(@result2.include? @auth).to be_truthy
+  puts expect(@result3.include? @subcode).to be_truthy
+rescue RSpec::Expectations::ExpectationNotMetError
+  errors << "MS ID #{@result} is displayed wrongly"
+end
+expect(errors).to eq []
+end
+
+
+# Then /^the system will display the correct manuscript$/ do
+#   errors = []
+#   @result = all(:xpath, '//*[@id="MtsTable"]/tbody/tr/td[3]/div/a')
+#   @result.each do |msid|
+#     @result = msid.text
+#   end
+#   begin
+#     expect(@result.include? @new_id).to be_truthy
+#   rescue RSpec::Expectations::ExpectationNotMetError
+#     errors << "MS ID #{@result} is displayed wrongly"
+#   end
+#   expect(errors).to eq []
+# end
+
+# end
 ##############################################################
 ######## Search with  Combination invalid data ###############
 ##############################################################
@@ -977,7 +1013,7 @@ end
 Given /^the user search by one recommendation$/ do
   step %Q{the user Choose The submission date from "03/01/2018"}
   step %Q{the user Choose The submission date To "04/02/2018"}
- find(:xpath, "//input[@id='SearchFields_ManunscriptId']").click
+  find(:xpath, "//input[@id='SearchFields_ManunscriptId']").click
   select '1', from: 'SearchFields_VersionNumber'
   find(:xpath, "//input[@value='EiCPublish']").set(true)
   step %Q{Click Search button}
@@ -989,7 +1025,7 @@ Then /^check submission and recommendation date then calculate the elapsed time$
   date = Date.parse submission_date
   puts date.strftime("%Y-%m-%d")
 
-  recommendation_date = find(:xpath,"//td[contains(text(),'Recommendation')]//following-sibling::td").text
+  recommendation_date = find(:xpath, "//td[contains(text(),'Recommendation')]//following-sibling::td").text
   rec_date = Date.parse recommendation_date
   puts rec_date.strftime("%Y-%m-%d")
 
@@ -1026,7 +1062,7 @@ Then /^report column display correct numbers$/ do
 
   expected_result = ("#{submitted_reviewers}/#{agreed_reviewers}/#{all_except_declined}/#{assigned_reviewers}").to_s
   # expect(system_reports).to eq(expected_result).to be_truthy
-  if system_reports==expected_result
+  if system_reports == expected_result
     puts "System display right report #{system_reports}"
   else
     puts "System display wrong report #{system_reports}"

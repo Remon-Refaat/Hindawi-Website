@@ -2,16 +2,17 @@ Feature: I want to test search manuscript in mts
 
   Background:
     Given open Admin MTS
-
+  @noura
   Scenario: Login, Open Search Manuscript page, Assert on pages titles
     Given enter valid email
     And click next
     Given enter valid password
     And click next again
-    Then Open Search Manuscript page
+
 
   Scenario: Verify that the page address is displayed correctly
-    Given check tha page address
+    Given Open Search Manuscript page
+    Then check tha page address
 
   Scenario: Verify that the user can back to general activities
     Given The user click on back to general activities
@@ -19,6 +20,7 @@ Feature: I want to test search manuscript in mts
 
   Scenario: Verify that the system displays a validation message when the user click search without enter data
     Then a validation message should appear
+
 
   Scenario: Search by Valid Manuscript ID
     Given the user enter valid Manuscript number "4153829"
@@ -67,7 +69,7 @@ Feature: I want to test search manuscript in mts
     And  click on MS ID
     Then system displays correct issue name
 
-  ##Error because the last parameter crash system
+
   Scenario: Search by invalid Manuscript Issue Name
     Then enter invalid issue name
       | input           | error                            |
@@ -80,7 +82,7 @@ Feature: I want to test search manuscript in mts
     Given the user enter valid Journal SubCode
     Then system will display Journal SubCode
 
-  ##Error because the last parameter crash system
+
   Scenario: Search by invalid Journal SubCode
     Then enter invalid subcode
       | jsubcode        | subcodeerror                     |
@@ -89,9 +91,11 @@ Feature: I want to test search manuscript in mts
       | <>noura<>       | Your search returned no results. |
       | -4153829        | Your search returned no results. |
 
+
   Scenario: Search with Valid Manuscript Author
     Given the user enter valid Manuscript Author
     Then system will display correct Manuscript Author
+
   #Bug
   Scenario: Search with Valid  multi manuscript authors
     Given the user enter valid Manuscript Authors
@@ -105,12 +109,13 @@ Feature: I want to test search manuscript in mts
       | #@$#%$^%&&^     | Your search returned no results. |
       | <>noura<>       | Your search returned no results. |
       | -4153829        | Your search returned no results. |
-  ##Error
+
+
   Scenario: Search with valid Combination data
     Given the user enter valid Manuscript number "8950516"
     And the user enter valid data in Manuscript Author "Xiaowen Jiang"
     And the user enter valid data Journal SubCode "ECAM"
-    Then the system will display the correct manuscript
+    Then the system will display the correct manuscript with valid combination
 
   ##Error because the parameter crash system
   Scenario: Search by invalid Manuscript title, Manuscript issue & Manuscript issue name
@@ -126,6 +131,7 @@ Feature: I want to test search manuscript in mts
     Given Check select-clear all from editorial recommendation
     Then All editorial recommendation should be selected
     Then All editorial recommendation should be unselected
+
 
   Scenario: Search by one Editorial Recommendation
     Given The user select one of the Editorial Recommendation
@@ -244,22 +250,24 @@ Feature: I want to test search manuscript in mts
     Given the user select random record and click on cover letter hyperlink
     Then the Cover Letter should be downloaded successfully "coverletter.3192074.v1.docx"
 
+  @noura
   Scenario: Verify that the system display the elapsed time correctly with Not finalize recommendation
     Given the user search by not finalized recommendation
     And click on MS ID
     Then check submission date and calculate the elapsed time
-#error
+
+
   Scenario: Verify that the system display the elapsed time correctly with a recommendation
     Given the user search by one recommendation
     Then check submission and recommendation date then calculate the elapsed time
 
-#error
+
   Scenario: Verify that Report column display correct numbers
     Given the user enter valid Manuscript number "9827454"
     And Click Search button
     Then report column display correct numbers
 
-#error
+
   Scenario: Verify that system views new manuscripts submitted
     Given new manuscript is submitted
     When user search by Manuscript ID
