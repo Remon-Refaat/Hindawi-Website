@@ -34,7 +34,7 @@ end
 
 Given /^Set the "(.*)" as "(.*)"$/ do |email,table|
   u_id = 0
-  user_id= select_from_dbs("Select UserId From Users where Email ='#{email}'")
+  user_id = select_from_dbs("Select UserId From Users where Email ='#{email}'")
   user_id.each do |row|
     u_id = row["UserId"]
   end
