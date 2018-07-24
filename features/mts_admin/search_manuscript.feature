@@ -2,12 +2,13 @@ Feature: I want to test search manuscript in mts
 
   Background:
     Given open Admin MTS
-
+  @noura
   Scenario: Login, Open Search Manuscript page, Assert on pages titles
     Given enter valid email
     And click next
     Given enter valid password
     And click next again
+
 
   Scenario: Verify that the page address is displayed correctly
     Given Open Search Manuscript page
@@ -19,6 +20,7 @@ Feature: I want to test search manuscript in mts
 
   Scenario: Verify that the system displays a validation message when the user click search without enter data
     Then a validation message should appear
+
 
   Scenario: Search by Valid Manuscript ID
     Given the user enter valid Manuscript number "4153829"
@@ -40,7 +42,7 @@ Feature: I want to test search manuscript in mts
     Given the user enter valid Manuscript title
     Then the matched result is displayed
 
-  ##Bug because the last parameter crash system
+  ##Error because the last parameter crash system
   Scenario: Search by invalid Manuscript title
     Given enter invalid Manuscript title
       | invalid_title            | error                            |
@@ -53,7 +55,7 @@ Feature: I want to test search manuscript in mts
     Given the user enter valid issue
     Then the matched issue should be displayed
 
-  ##Bug because the last parameter crash system
+  ##Error because the last parameter crash system
   Scenario: Search by invalid issue
     Given enter invalid issue
       | invalid_issue            | error                            |
@@ -67,6 +69,7 @@ Feature: I want to test search manuscript in mts
     And  click on MS ID
     Then system displays correct issue name
 
+
   Scenario: Search by invalid Manuscript Issue Name
     Then enter invalid issue name
       | input           | error                            |
@@ -79,6 +82,7 @@ Feature: I want to test search manuscript in mts
     Given the user enter valid Journal SubCode
     Then system will display Journal SubCode
 
+
   Scenario: Search by invalid Journal SubCode
     Then enter invalid subcode
       | jsubcode        | subcodeerror                     |
@@ -86,6 +90,7 @@ Feature: I want to test search manuscript in mts
       | #@$#%$^%&&^     | Your search returned no results. |
       | <>noura<>       | Your search returned no results. |
       | -4153829        | Your search returned no results. |
+
 
   Scenario: Search with Valid Manuscript Author
     Given the user enter valid Manuscript Author
@@ -96,7 +101,7 @@ Feature: I want to test search manuscript in mts
     Given the user enter valid Manuscript Authors
     Then system will display correct Manuscript Authors
 
-  ##Bug because the parameter crash system
+  ##Error because the parameter crash system
   Scenario: Search by invalid Manuscript Author(s)
     Then enter invalid authors
       | authors         | authrserror                      |
@@ -105,13 +110,14 @@ Feature: I want to test search manuscript in mts
       | <>noura<>       | Your search returned no results. |
       | -4153829        | Your search returned no results. |
 
+
   Scenario: Search with valid Combination data
     Given the user enter valid Manuscript number "8950516"
     And the user enter valid data in Manuscript Author "Xiaowen Jiang"
     And the user enter valid data Journal SubCode "ECAM"
     Then the system will display the correct manuscript with valid combination
 
-  ##Bug because the parameter crash system
+  ##Error because the parameter crash system
   Scenario: Search by invalid Manuscript title, Manuscript issue & Manuscript issue name
     Then The system validate the following data
       | invalid_data             | error                            |
@@ -120,10 +126,12 @@ Feature: I want to test search manuscript in mts
       | #@$#$#^%$^#%%$^%$%$^%&&^ | Your search returned no results. |
       | <><><<<<<<<<<<<<<Asl<><> | Your search returned no results. |
 
+  #error
   Scenario: Verify that the user can select/clear all editorial recommendation
     Given Check select-clear all from editorial recommendation
     Then All editorial recommendation should be selected
     Then All editorial recommendation should be unselected
+
 
   Scenario: Search by one Editorial Recommendation
     Given The user select one of the Editorial Recommendation
@@ -159,8 +167,12 @@ Feature: I want to test search manuscript in mts
     Given  the user Choose The submission date To "01/01/2015"
     Then System should display manuscripts submitted till To date
 
+#error
   Scenario: Verify that the system validate when the user search by invalid submission dates
     Given the user Choose invalid submission date from and to then the system should validate
+#    And the user Choose invalid submission date To
+#    Then The system display "Wrong Dates."
+
       | date_from     | date_to       | validation_message |
       | 20/12/2017    | 31/12/2017    | Wrong Dates.       |
       | 12/2017       | 12/2017       | Wrong Dates.       |
@@ -226,6 +238,7 @@ Feature: I want to test search manuscript in mts
       | Editorial Recommendation | 8  |
       | Elapsed Time             | 9  |
 
+#error
   Scenario: Test manuscript id is hyperlinked and opens MS details
     Given the user enter valid Manuscript number "4153829"
     And Click Search button
@@ -237,19 +250,23 @@ Feature: I want to test search manuscript in mts
     Given the user select random record and click on cover letter hyperlink
     Then the Cover Letter should be downloaded successfully "coverletter.3192074.v1.docx"
 
+  @noura
   Scenario: Verify that the system display the elapsed time correctly with Not finalize recommendation
     Given the user search by not finalized recommendation
     And click on MS ID
     Then check submission date and calculate the elapsed time
 
+
   Scenario: Verify that the system display the elapsed time correctly with a recommendation
     Given the user search by one recommendation
     Then check submission and recommendation date then calculate the elapsed time
+
 
   Scenario: Verify that Report column display correct numbers
     Given the user enter valid Manuscript number "9827454"
     And Click Search button
     Then report column display correct numbers
+
 
   Scenario: Verify that system views new manuscripts submitted
     Given new manuscript is submitted
