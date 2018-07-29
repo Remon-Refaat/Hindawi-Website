@@ -9,3 +9,5 @@ gem 'capybara-screenshot'
 gem 'wannabe_bool'
 gem 'tiny_tds'
 gem 'pdf-reader'
+gem 'byebug'
+

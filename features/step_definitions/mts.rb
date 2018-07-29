@@ -5,7 +5,6 @@ Given /^Navigate to "(.*)"$/ do |url|
   visit url
 end
 
-
 Given /^Choose (\d+) authors$/ do |authorsnum|
   @authorsnum = authorsnum
   select authorsnum, from: "Authors_SelectedAuthorCount"
@@ -26,25 +25,23 @@ Given /^Add the data of all authors$/ do |table|
   end
 end
 
-
 Given /^login As Author via "(.*)" with "(.*)", "(.*)" and "(.*)"$/  do |url,admin_email, admin_pass, role_email|
   visit url+"/"+admin_email+"/"+admin_pass+"/"+role_email
 end
 
-
 Given /^Set the "(.*)" as "(.*)"$/ do |email,table|
   u_id = 0
-  user_id = select_from_dbs("Select UserId From Users where Email ='#{email}'")
+  user_id= select_from_dbs('mtsv2', "Select UserId From Users where Email ='#{email}'")
   user_id.each do |row|
     u_id = row["UserId"]
   end
       case table
    when "Bad-debt"
-     execute_dbs_query("INSERT INTO BadDebts
+     execute_dbs_query('mtsv2', "INSERT INTO BadDebts
    VALUES (#{u_id},'CRIS',964625,300,'USD','2018-01-20');")
      puts "Bad-debt is set"
    when "Sanctioned"
-     execute_dbs_query("INSERT INTO BlackListedAuthors
+     execute_dbs_query('mtsv2', "INSERT INTO BlackListedAuthors
         VALUES (#{u_id},'2013-08-20' ,null,'',123456,null);")
      puts "Sanctioned is set"
    end
@@ -62,6 +59,7 @@ end
 And /^Press on "(.*)"$/ do |btn|
   click_button btn
 end
+
 And /^Click on "(.*)"$/ do |link|
   within(:xpath, '//*[@id="container"]/div[5]') do
      click_link link
@@ -87,13 +85,12 @@ end
 And /^Choose a file "(.*)" for "(.*)"$/ do |file, type|
   find(:xpath, "//input[@name='#{type}']").send_keys ENV['DATAPATH'] + file
 end
-And /^Select the answers of the questions "(.*)", "(.*)", and "(.*)"$/ do |ans1, ans2, ans3|
 
+And /^Select the answers of the questions "(.*)", "(.*)", and "(.*)"$/ do |ans1, ans2, ans3|
   types = ["Research Article", "Clinical Study", "Review Article", "Letter to the Editor", "Case Report"]
   find("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@value='#{ans1}']").click if types.include?("#{@article}")
   find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{ans2}']").click if types.first(2).include?("#{@article}")
   find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{ans3}']").click if types.first(2).include?("#{@article}")
-
 end
 
 And /^Choose an invalid manuscript file type and Press on "(.*)"$/ do |btn, table|
@@ -104,6 +101,7 @@ And /^Choose an invalid manuscript file type and Press on "(.*)"$/ do |btn, tabl
     step %Q{"Manuscript file can only be submitted in PDF (.pdf) or Word (.doc, .docx) formats." will be displayed}
     end
 end
+
 And /^Go to "(.*)"$/ do |journal|
   visit "http://beta.mts.hindawi.com/submit/journals/"
   click_link journal
@@ -119,12 +117,11 @@ And /^Download the pdf file$/ do
 end
 
 And /^Should be found on the Author Activities list with  "(.*)" Status$/ do |status|
-  ms_id = find(:xpath, "//*[@id='container']/div[5]/div[2]/div/p[1]/a").text
+  @ms_id = find(:xpath, "//*[@id='container']/div[5]/div[2]/div/p[1]/a").text
   click_link 'Author Activities'
-  expect(find(:xpath, "//*[@id='container']/div[5]/div/table/tbody/tr[1]/td[1]/span").text.include?(ms_id)).to be_truthy
+  expect(find(:xpath, "//*[@id='container']/div[5]/div/table/tbody/tr[1]/td[1]/span").text.include?(@ms_id)).to be_truthy
   expect(find(:xpath,"//*[@id='container']/div[5]/div/table/tbody/tr[1]/td[4]").text).to eql(status)
 end
-
 
 And /^I verify the appearance of questions$/ do |table|
   errors = []
@@ -175,84 +172,75 @@ end
 
 And /^Delete "(.*)" From "(.*)" table$/ do |email,table|
   u_id = 0
-  user_id= select_from_dbs("Select UserId From Users where Email ='#{email}'")
+  user_id= select_from_dbs('mtsv2', "Select UserId From Users where Email ='#{email}'")
   user_id.each do |row|
     u_id = row["UserId"]
   end
   case table
   when "Bad-debt"
-     execute_dbs_query("DELETE FROM BadDebts
-     WHERE UserId='#{u_id}'")
+     execute_dbs_query('mtsv2', "DELETE FROM BadDebts WHERE UserId='#{u_id}'")
     puts "deleted"
   when "Sanctioned"
-    execute_dbs_query("DELETE FROM BlackListedAuthors
-     WHERE UserId='#{u_id}'")
+    execute_dbs_query('mtsv2', "DELETE FROM BlackListedAuthors WHERE UserId='#{u_id}'")
     puts "deleted"
   end
 end
+
 And(/^Select a random Article Type$/) do
+    articles = page.all(:xpath,"//*[@id='Manuscript_TypeId']/option")
+    article = articles.select {|i| i != '--Please Select--'}
+    @article = article[rand(article.length)]
+    @article.click
+
   @article = page.find("//*[@id='Manuscript_TypeId']/option[2]").text
   page.find("//*[@id='Manuscript_TypeId']/option[2]").click
 end
 
-
-
 And /^Hover on circles$/ do
-  page.first(:xpath,"//*[@id='tr_MsTypeSubmissionQuestion_MSType_2']/td/span[1]").hover
-  #OR
-  #page.driver.browser.action.move_to(page.find(:xpath,"//a[@href='/admin/']").native).perform
+  # hovermessage = page.first(:xpath, "//td[contains(text(),'conflict')]//span/span").text
+  # puts hovermessage
+  # #OR
+  page.driver.browser.action.move_to(page.find(:xpath,"//td[contains(text(),'conflict')]//span/span").native).perform
 end
+
 And /^Choose the Article type "(.*)"$/ do |type|
   @article = type
   select type, from: 'Manuscript_TypeId'
 end
 
-
 And /I verify the appearance of text box to enter your justification$/ do |table|
-  errors = []
-  table.rows.each do |type,q1,q2, q3|
-    case type
-    when "Research Article"
+    @textbox_errors = []
+    table.rows.each do |type,q1,q2, q3|
       step %Q{Choose the Article type "#{(type)}"}
-      if  !(textbox_has_displayed(0,q1))
-        errors << "textbox not displayed "
-      end
-      if  !(textbox_has_displayed(1,q2))
-        errors << "textbox not displayed "
-      end
-      if  !(textbox_has_displayed(2,q3))
-        errors << "textbox not displayed "
-      end
-    when "Review Article"
-      step %Q{Choose the Article type "#{type}"}
-      if  !(textbox_has_displayed(3,q1))
-        errors << "textbox not displayed "
-      end
-    when "Letter to the Editor"
-      step %Q{Choose the Article type "#{type}"}
-      if  !(textbox_has_displayed(4,q1))
-        errors << "textbox not displayed "
-      end
-    when "Clinical Study"
-      step %Q{Choose the Article type "#{type}"}
-      if  !(textbox_has_displayed(5,q1))
-        errors << "textbox not displayed "
-      end
-      if  !(textbox_has_displayed(6,q2))
-        errors << "textbox not displayed "
-      end
-      if  !(textbox_has_displayed(7,q3))
-        errors << "textbox not displayed "
-      end
-    when "Case Report"
-      step %Q{Choose the Article type "#{type}"}
-      if  !(textbox_has_displayed(8,q1))
-        errors << "textbox not displayed "
+      if type.include?('Research Article') or type.include?('Letter to the Editor')
+        begin
+          find("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@value='#{q1}']").click
+          expect(page.has_selector?(:xpath, "//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//textarea")).to be_truthy
+        rescue
+          @textbox_errors << "textbox not displayed  for #{type}"
+        end
+        begin
+          find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{q2}']").click
+          expect(page.has_selector?(:xpath, "//td[contains(text(),'data availability')]/../following-sibling::tr[1]//textarea")).to be_truthy
+        rescue
+          @textbox_errors << "textbox not displayed  for #{type}"
+        end
+        begin
+          find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{q3}']").click
+          expect(page.has_selector?(:xpath, "//td[contains(text(),'funding')]/../following-sibling::tr[1]//textarea")).to be_truthy
+        rescue
+          @textbox_errors << "textbox not displayed  for #{type}"
+        end
+      else
+        begin
+          find("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@value='#{q1}']").click
+          expect(page.has_selector?(:xpath, "//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//textarea")).to be_truthy
+        rescue
+          @textbox_errors << "textbox not displayed #{type}"
+        end
       end
     end
   end
-  expect(errors).to eq([])
-end
 
 And ("Open manuscript details page") do
   find(:xpath, "//*[@id='container']/div[5]/div/table/tbody/tr[1]/td[1]/a/img").click
@@ -322,7 +310,8 @@ end
 error = []
 error = errors1 + error2 + error3
 expect(error.empty?).to be true
- end
+end
+
 Then /^Click on all links and verify the title of the page$/ do |table|
   error = []
   table.hashes.each do |elem|
@@ -353,7 +342,8 @@ Then /^The following validation messages will be displayed$/ do |table|
   end
   puts error
   expect(error).to eq([])
-  end
+end
+
 Then /^Red asterisk is displayed beside the mandatory fields$/ do |table|
 error1 = []
 error2 = []
@@ -415,20 +405,106 @@ end
 
 Then /^The submitting author "(.*)" should be the displayed with bold style$/ do |email|
   full_name = 0
-  user_name= select_from_dbs("Select FullName From Users where Email ='#{email}'")
+  user_name= select_from_dbs('mtsv2', "Select FullName From Users where Email ='#{email}'")
   user_name.each do |row|
     full_name = row["FullName"]
   end
   expect(find(:xpath, "//*[@id='content']/div/table/tbody//b").text).to eql(full_name)
 end
 
+Then ("All textboxs should be displayed")do
+  expect(@textbox_errors).to eq([])
+end
 
-Then /^Information displayed$/ do
+Then /^Submission Email sent to the author$/ do
+  result = []
+  execute_dbs_query('mtsv2', "UPDATE SubmissionsSendMail SET EQSReleaseDate = '2018-07-10' where ManuscriptId='#{@ms_id}'")
+  sleep 6
+  email_subject = select_from_dbs('HindawieMailsTest', "select MsgSubject from eMails where ArticleId='#{@ms_id}'")
+  email_subject.each do |subject|
+    result = subject["MsgSubject"]
+  end
+  expect(result).to eq("#{@ms_id}: Acknowledging Receipt")
+  #expect(email_subject.include?(@ms_id)).to be_truthy
+end
+
+Then /^Email sent to EA$/ do
+  @sent_email = []
+  execute_dbs_query('mtsv2', "UPDATE SubmissionsSendMail SET EQSReleaseDate = '2018-07-11' where ManuscriptId='#{@ms_id}'")
   sleep 5
-  expect(page.has_selector?("//*[@id='tr_MsTypeSubmissionQuestion_MSType_2']/td/span/span/text()")).to be_truthy
+  ea_email = select_from_dbs('HindawieMailsTest', "select * from eMails where ArticleId='#{@ms_id}'")
+  ea_email.each do |record|
+    @sent_email << record["MsgSubject"]
+  end
+  expect(@sent_email.include?("#{@ms_id}: More than one Manuscript for the Authors")).to be_truthy
 end
 
 
+Then /^Rest Password Email sent to the not register user$/ do
+  @pass_email = []
+  execute_dbs_query('mtsv2', "UPDATE SubmissionsSendMail SET EQSReleaseDate = '2018-07-16' where ManuscriptId='#{@ms_id}'")
+
+  resetpass_email = select_from_dbs('HindawieMailsTest', "select * from eMails where ArticleId='#{@ms_id}'")
+  resetpass_email.each do |record|
+    @pass_email << record["MsgBody"]
+  end
+  expect(@pass_email.to_s.include?("you may access after resetting your password")).to be_truthy
+end
+
+Then /^Rest Password Email not sent to the not register user again$/ do
+  @repeat_email = []
+  execute_dbs_query('mtsv2', "UPDATE SubmissionsSendMail SET EQSReleaseDate = '2018-07-16' where ManuscriptId='#{@ms_id}'")
+
+  repatpass_email = select_from_dbs('HindawieMailsTest', "select * from eMails where ArticleId='#{@ms_id}'")
+  repatpass_email.each do |record|
+    @repeat_email << record["MsgBody"]
+  end
+  expect(@repeat_email.to_s.include?("you may access after resetting your password")).to be_falsey
+end
+
+Then /^Check EA & ES Specialist & Reviewers checker assigned to MS$/ do
+  execute_dbs_query('mtsv2', "UPDATE SubmissionsSendMail SET EQSReleaseDate = '2018-07-17' where ManuscriptId='#{@ms_id}'")
+
+  step %Q{open Admin MTS}
+  step %Q{enter valid email}
+  step %Q{click next}
+  step %Q{enter valid password}
+  step %Q{click next again}
+  step %Q{the user enter valid Manuscript number "#{@ms_id}"}
+  step %Q{Click Search button}
+  step %Q{the system will display the correct manuscript}
+
+  es_spisalist = find(:xpath, "//a[contains(text(),'EDSCRN')]").text
+  ea_spisalist = find(:xpath, "//a[contains(text(),'EDITRL')]").text
+  rv_spisalist = find(:xpath, "//a[contains(text(),'RCHK')]").text
+
+  # assigned_staff = []
+  # assigned_staff << es_spisalist + ea_spisalist + rv_spisalist
+  expect(es_spisalist.include?("EDSCRN") && ea_spisalist.include?("EDITRL") && rv_spisalist.include?("RCHK")).to be_truthy
+  #expect(assigned_staff.include?('EDSCRN', 'EDITRL', 'RCHK')).to be_truthy
+  # expect(ea_spisalist.include?("EDITRL")).to be_truthy
+  # expect(rv_spisalist.include?("RCHK")).to be_truthy
+end
+
+Then /^Check Research Data page open$/ do
+  error = []
+  new_window = window_opened_by do
+    first(:xpath, "//a[contains(text(),'here')]").click
+  end
+  within_window new_window do
+    begin
+      page.has_title? "Research Data"
+    rescue
+      error << "The page not displayed"
+    end
+    page.execute_script("window.close()")
+  end
+  expect(error).to eq([])
+end
+
+Then /^Check here link don't displayed$/ do
+  expect(page.has_selector?(:xpath, "//a[contains(text(),'here')]")).to be_falsey
+end
 
 ################### DEF#######################
 
@@ -441,7 +517,6 @@ def check_for_manuscript_page_title(page_title)
       click_link 'Regular Issues'
     end
   end
-
 
   def get_displayed_questions (ms_type_number)
     all_questions = []
@@ -460,6 +535,4 @@ def check_for_manuscript_page_title(page_title)
       return false
     end
   end
-
-
 end
