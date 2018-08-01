@@ -1,3 +1,118 @@
+def selectMS
+  matrix = []
+  loop do
+
+    xx = page.all("//table[@id='MtsTable']/tbody/tr/td[3]/a")
+
+    xx.each do |row|
+      @MSidd = row
+      matrix << @MSidd
+      @MSidd = matrix.sample
+
+      @IDDD = @MSidd.text
+    end
+
+    @MSidd.click
+
+
+    sleep 1
+    break if page.has_selector?("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]")
+    page.evaluate_script('window.history.back()')
+  end
+
+end
+
+
+def sleDb
+  arr = []
+  ms_id = select_from_dbs("mtsv2", "SELECT top 10 * FROM  dbo.Manuscripts WHERE [MsTypeId] ='2' AND CurrentRecommendationId = 'Not'")
+  ms_id.each do |row|
+    @ms_ids = row['ManuscriptId']
+    arr << @ms_ids
+    @ms_ids = arr.sample
+  end
+  puts @ms_ids
+
+
+  user_id = select_from_dbs("mtsv2", "SELECT UserId FROM dbo.staffmanuscripts WHERE [ManuscriptId] = '#{@ms_ids}'")
+
+  user_id.each do |row|
+    @UserId = row['UserId']
+  end
+
+  puts @UserId
+
+
+  eA_mail = select_from_dbs("mtsv2", "SELECT Email FROM dbo.Users WHERE UserId = '#{@UserId}'")
+
+  eA_mail.each do |row|
+    @EAMail = row['Email']
+  end
+  puts @EAMail
+end
+
+
+def geturl
+
+  visit 'http://beta.admin.mts.hindawi.com/auth/' + @EAMail
+
+  # path = page.current_path
+  #
+  puts url = URI.parse(current_url)
+
+  visit url + @ms_ids
+end
+
+
+def looop1
+  loop do
+    sleDb
+    geturl
+    break if page.has_selector?("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]")
+
+  end
+end
+
+
+def looop2
+  loop do
+    looop1
+    page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
+    break if page.has_no_selector?("//b[text()='You are not authorized to view this page.']")
+  end
+
+end
+
+
+def chekdown
+  @no = @zz.split('/')
+  if @no[1].include?("v1")
+    File.open("#{ENV['Download_Dir']}/#{@no[1]}.pdf", 'rb') do |io|
+      reader = PDF::Reader.new(io)
+      reader.pages.each do |page|
+        # page.text
+        puts expect(page.should have_content('Author 3')).to be true
+      end
+    end
+  elsif @no[1].include?("v2")
+
+    File.open("#{ENV['Download_Dir']}/#{@no[1]}.pdf", 'rb') do |io|
+      reader = PDF::Reader.new(io)
+      reader.pages.each do |page|
+        page.text
+        puts expect(page.should have_content('Author 3')).to be true
+      end
+
+      # @session.driver.browser.action.context_click(self.native).perform
+
+    end
+
+
+  end
+
+end
+
+
 #############################
 ########### Given ###########
 #############################
@@ -48,7 +163,7 @@ Given /^enter invalid Manuscript title$/ do |invalid_title|
     find(:id, "SearchFields_Title").native.clear
     find(:id, "SearchFields_Title").send_keys row['invalid_title']
     step %Q{Click Search button}
-    sleep 2
+    sleep 1
     begin
       result = find(:xpath, '//*[@id="form0"]/div[3]/b').text
       expect(result).to eq(row['error'])
@@ -64,7 +179,7 @@ Given /^enter invalid issue$/ do |invalid_issue|
     find(:id, "SearchFields_IssueId").native.clear
     find(:id, "SearchFields_IssueId").send_keys row['invalid_issue']
     step %Q{Click Search button}
-    sleep 2
+    sleep 1
     begin
       result = find(:xpath, '//*[@id="form0"]/div[3]/b').text
       expect(result).to eq(row['error'])
@@ -120,7 +235,7 @@ Given /^the user enter valid Manuscript Authors$/ do
   step %Q{Open Search Manuscript page}
   fill_in 'SearchFields_AuthorsName', with: "MOHREM ABDELKRIM, CHETATE Boukhemis, GUIA Houssem Eddine"
   step %Q{Click Search button}
-  sleep 5
+  sleep 1
 end
 
 Given /^the user clear the field and enter invalid data "(.*)"$/ do |invalid_data|
@@ -166,7 +281,7 @@ Given /^user Choose "(.*)" from drop down list$/ do |pages|
   step %Q{the user Choose The submission date To "04/30/2018"}
   select pages, from: "SearchFields_ManuscriptPerPage"
   step %Q{Click Search button}
-  sleep 5
+  sleep 1
 end
 
 Given /^the user Choose The submission date from "(.*)"$/ do |from|
@@ -295,7 +410,7 @@ end
 Given /^the user select random record and click on cover letter hyperlink$/ do
   step %Q{the user enter valid Manuscript number "3192074"}
   step %Q{Click Search button}
-  sleep 2
+  sleep 1
   find(:xpath, "//*[@id='MtsTable']/tbody/tr/td[6]/a").click
 end
 
@@ -337,12 +452,646 @@ Given /^new manuscript is submitted$/ do
   puts @ms_id = find(:xpath, "//*[@id='container']/div[5]/div[2]/div/p[1]/a").text
 end
 
+
+Given /^I open (.*)$/ do |url|
+  visit url
+end
+
+Given /^I enter username (.*)$/ do |username|
+  email = page.first("//div//input[@type='email']")
+  email.send_keys username
+
+end
+
+Given /^I click on Next button "(.*)"$/ do |btn|
+  page.find("//*[@id='#{btn}']/content/span").click
+  sleep 1
+end
+
+Given /^I enter password (.*)$/ do |pass|
+  passw = page.first("//input[@type='password']")
+  passw.send_keys pass
+end
+
+Given /^I navigate to EA account (.*)$/ do |url|
+  visit url
+  sleep 1
+end
+
+Given("Staff Manuscripts is opened") do
+  # page.driver.browser.action.move_to(page.find("//a[@href='/editorial.staff/']").native).perform
+  find(:xpath, "//div[@class='treemenu']").hover
+  find("//*[@id='ctl00_NavigationBar1_LeftNavBar']/div/ul/li/ul/li[5]/a").click
+
+end
+
+# Given ("I log out") do
+# page.find("//*[@id='hindawi_links']/ul/li[2]/a").click
+# end
+
+
+Given /^I fill the field Manuscript Title with (.*)$/ do |value|
+  # fill_in "//div[contains(text(),'#{label}:')]/../following-sibling::td", :with => value
+  #  fill_in label.gsub(' ', '_'), :with => value
+  fill_in 'MsTitle', with: value
+
+  sleep 1
+end
+
+Given("I select issue, Manuscript type, and recommendation from dropdown lists") do
+
+
+  isuue = page.all("//select[@id='SelectedIssueId']/option")
+  is=[]
+  isuue.each do |row|
+    @issu_d = row
+    is<<@issu_d
+  end
+  @re = is.sample
+  @RBE =@re.text
+
+  @re.click
+
+
+  m_ty =page.all("//select[@id='SelectedMsTypeId']/option")
+  tyeds=[]
+  m_ty.each do |row|
+    @m_typee=row
+    tyeds<<@m_typee
+  end
+  @sample = tyeds.sample
+  @mtype=@sample.text
+  @sample.click
+
+  recos= page.all("//select[@id='SelectedRecommendationId']/option")
+  rere=[]
+  recos.each do |row|
+    @reci=row
+    rere<<@reci
+  end
+  @R = rere.sample
+  @R.click
+  @RRBE= @R.text
+puts @RRBE
+  if @RRBE == "Reject By Editorial Staff"
+
+    page.find("//*[@id='form0']/table/tbody/tr[5]/td[2]/input[2]").click
+
+  end
+
+end
+
+
+Given ("I upload Manuscript PDF File, Additional File, Supplementary Materials") do
+  page.find("//*[@id='form0']/table/tbody/tr[6]/td[2]/input[@type = 'file']").send_keys "#{ENV['DATAPATH']}6837404.pdf"
+  sleep 1
+
+  page.find("//*[@id='form0']/table/tbody/tr[7]/td[2]/input[@type = 'file']").send_keys "#{ENV['DATAPATH']}6837404.pdf"
+
+  sleep 1
+  page.find("//*[@id='form0']/table/tbody/tr[8]/td[2]/input[@type = 'file']").send_keys "#{ENV['DATAPATH']}6837404.pdf"
+
+  find("//*[@id='SupplementaryDescr']").native.clear
+  @supplementary = 'ssssssssssssssssssssssssssss'
+  find("//*[@id='SupplementaryDescr']").send_keys(@supplementary)
+  sleep 1
+
+end
+
+Given /^I check on the radio buttons of conflicts of interest, data availability statement, funding statement, and Select the answers of the questions "(.*)", "(.*)", and "(.*)"$/ do |ans1, ans2, ans3|
+  types = ["Research Article", "Clinical Study", "Review Article", "Letter to the Editor", "Case Report"]
+  page.find("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@value='#{ans1}']").click if types.include?("#{@mtype}")
+  page.find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='#{ans2}']").click if types.first(2).include?("#{@mtype}")
+  page.find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='#{ans3}']").click if types.first(2).include?("#{@mtype}")
+  sleep 1
+end
+
+Given ("Download additional file link should be displayed") do
+  puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[7]/td[2]/a[1]")).to be true
+end
+
+
+Given ("Delete link should be displayed beside additional file") do
+  puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[7]/td[2]/a[2]")).to be true
+end
+
+
+Given ("Delete link should be displayed beside supplementary materials") do
+  puts expect(page.has_selector?("//*[@id='form0']/table/tbody/tr[8]/td[2]/a[2]")).to be true
+  sleep 1
+end
+
+Given ("I download MS PDF") do
+
+  find("//*[@id='form0']/table/tbody/tr[6]/td[2]/a").click
+end
+
+Given("I Check new changes in MTs admin in MS details") do
+
+  find("//*[@id='container']/div[9]/div[1]/a").click
+  sleep 1
+  supp = find("//span[@id='descr']").text
+
+  puts (expect supp == @supplementary).to be true
+
+  @zz = page.find("//*[@id='container']/div[9]/h1").text
+
+  if @zz.include?("v1")
+    File.open("#{ENV['Download_Dir']}/#{@msddz}.v1.pdf", 'rb') do |io|
+      reader = PDF::Reader.new(io)
+      reader.pages.each do |page|
+        # page.text
+        puts expect(page.should have_content('Author 3')).to be true
+      end
+    end
+  elsif @zz.include?("v2")
+
+    File.open("#{ENV['Download_Dir']}/#{@msddz}.v2.pdf", 'rb') do |io|
+      reader = PDF::Reader.new(io)
+      reader.pages.each do |page|
+        page.text
+        puts expect(page.should have_content('Author 3')).to be true
+      end
+
+      # @session.driver.browser.action.context_click(self.native).perform
+
+    end
+
+
+  end
+
+  clear_downloads
+
+
+end
+
+
+Given "select MS that takes flag of is published and get the email address that handle the paper from DB" do
+
+  g = []
+  ms_id = select_from_dbs("mtsv2", "SELECT  ManuscriptId  FROM dbo.Manuscripts WHERE Ispublished = '1' AND MSSubmitDate BETWEEN '2018-01-01' AND '2018-12-31'")
+
+  ms_id.each do |row|
+    @MS_id = row['ManuscriptId']
+    g << @MS_id
+    @MS_id = g.sample
+  end
+  puts @MS_id
+
+
+  user_id = select_from_dbs("mtsv2","SELECT UserId FROM dbo.StaffManuscripts WHERE ManuscriptId = '#{@MS_id}'")
+
+  user_id.each do |row|
+    @UserId = row['UserId']
+  end
+
+  puts @UserId
+
+  eA_mail = select_from_dbs("mtsv2","select Email from dbo.Users where UserId = '#{@UserId}'")
+
+  eA_mail.each do |row|
+    @EAMail = row['Email']
+  end
+  puts @EAMail
+
+end
+
+Given ("I navigate to EA account") do
+
+  visit 'http://beta.admin.mts.hindawi.com/auth/' + @EAMail
+
+  # path = page.current_path
+  #
+  puts url = URI.parse(current_url)
+
+  visit url + @MS_id
+
+end
+
+Given ("Edit link should not be appeared") do
+  puts expect(page.has_xpath?('//*[@id="container"]/div[9]/ul/li[contains(.,"Edit Manuscript Details")]')).to be false
+
+  sleep 1
+end
+
+
+Given ("i check redio button of conflict of interest") do
+
+  sleep 1
+  page.first(:xpath, "//input[@type='radio'][@name='SubmissionQuestionsAnswersList[0].EditorialAnswer_YES']").click
+  step %Q{I click  on Update}
+  sleep 1
+  box = page.find(:xpath, "//*[@id='div_MsTypeSubmissionQuestion_Comment_1']")
+  expect(box) == page.find(:xpath, "//*[@id='div_MsTypeSubmissionQuestion_Comment_1']").visible?
+  message = page.find(:xpath, "//*[@id='validationSummary']/ul/li")
+  expect(message) == "Please complete the submission questions answers."
+
+end
+
+
+Given /^I Uplaod invalid files in this fileds Manuscript PDF File and Additional File$/ do
+  page.find(:xpath, "//input[@name='PdfFile']").send_keys "#{ENV['DATAPATH']}testi.mp3"
+  page.find(:xpath, "//input[@name='AdditionalFile']").send_keys "#{ENV['DATAPATH']}testi.mp3"
+  step %Q{I click  on Update}
+
+  # message2 = page.find(:xpath, "//*[@id='validationSummary']/ul/li[1]")
+  expect(page.has_selector?("//*[@id='validationSummary']/ul/li[1]")).to be_truthy
+  expect(page.has_selector?("//*[@id='validationSummary']/ul/li[2]")).to be_truthy
+end
+
+Given /^i delete ms title$/ do
+  page.find(:xpath, "//*[@id='MsTitle']").native.clear
+  step %Q{I click  on Update}
+sleep 5
+  puts expect(page.has_selector?("//li[contains(text(),'Please enter the manuscript title.')]")).to be_truthy
+end
+
+Given /^I can upload and dowenload the Additional$/ do
+  page.find(:xpath, "//input[@name='AdditionalFile']").send_keys "#{ENV['DATAPATH']}test1.pdf"
+  page.find(:xpath, "//input[@name='SupplementaryMaterials']").send_keys "#{ENV['DATAPATH']}test2.pdf"
+  page.first(:xpath, "//*[@id='SupplementaryDescr']").send_keys("test")
+  step %Q{I click  on Update}
+  page.first(:xpath, "//a[text()[contains(.,'Additional File')]]").click
+  sleep 1
+  # # step %Q{I pause}
+  page.find(:xpath, "//*[@id='form0']/table/tbody/tr[8]/td[2]/a[2]").click
+  page.driver.browser.switch_to.alert.accept
+
+  clear_downloads
+end
+
+Given /^i can delete file$/ do
+  page.find(:xpath, "//input[@name='AdditionalFile']").send_keys "#{ENV['DATAPATH']}test1.pdf"
+  step %Q{I click  on Update}
+
+  page.find(:xpath, "//*[@id='form0']/table/tbody/tr[7]/td[2]/a[2]").click
+
+  puts page.driver.browser.switch_to.alert.text
+  a = page.driver.browser.switch_to.alert
+  if a.text == 'something'
+    a.dismiss
+  else
+    a.accept
+  end
+  puts expect(page.has_no_xpath?("//a[text()[contains(.,'Additional File')]]")).to be_truthy
+
+end
+Given /^click on "(.*)" to Ms details$/ do |back|
+  click_link back
+
+  puts expect(page.has_link?('Edit Manuscript Details')).to be_truthy
+
+end
+
+Given /^admin can edit the selection from Yes to No and vice versa$/ do
+  sleep 2
+  page.find("//*[@id='form0']/table/tbody/tr[8]/td[2]/input[@type = 'file']").send_keys "#{ENV['DATAPATH']}6837404.pdf"
+
+  find("//*[@id='SupplementaryDescr']").native.clear
+  @supplementary = 'ssssssssssssssssssssssssssss'
+  find("//*[@id='SupplementaryDescr']").send_keys(@supplementary)
+  @tyie = page.find("//*[@id='SelectedMsTypeId']/option[@selected]").text
+  puts @tyie
+  types = ["Research Article", "Clinical Study", "Review Article", "Letter to the Editor", "Case Report"]
+  page.find("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@value='No']").click if types.include?("#{@tyie}")
+  page.find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='Yes']").click if types.first(2).include?("#{@tyie}")
+  page.find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='Yes']").click if types.first(2).include?("#{@tyie}")
+  sleep 2
+  step %Q{I click  on Update}
+  msgConfrim = page.find("//*[@id='sp_Message']/b").text
+
+  expect(msgConfrim == 'Operation Completed Successfully.').to be true
+  sleep 1
+end
+
+Given ("Choose ms which is flagged as re-review") do
+
+  ms_review_id = select_from_dbs("mtsv2", "select * from [dbo].[ManuscriptsRereview] Where ConfirmedRereviewDate IS NULL AND RereviewDate >= '2018-01-01 00:00:00'")
+
+  ids = []
+  ms_review_id.each do |row|
+    @R_id = row['ManuscriptId']
+    ids << @R_id
+    @R_id = ids.sample
+  end
+  puts @R_id
+
+
+  use_id = select_from_dbs("mtsv2", "SELECT UserId FROM dbo.staffmanuscripts WHERE ManuscriptId = '#{@R_id}'")
+
+  ud = []
+  use_id.each do |row|
+    @usee_id = row['UserId']
+    ud << @usee_id
+  end
+
+  puts @usee_id
+
+
+  use_email = select_from_dbs("mtsv2", "SELECT Email FROM dbo.Users WHERE userId = '#{@usee_id}'")
+
+  uE = []
+  use_email.each do |row|
+    @ma = row['Email']
+    ud << @ma
+  end
+
+  puts @ma
+
+end
+
+
+Given ("login as EA who handle this ms") do
+
+  visit 'http://beta.admin.mts.hindawi.com/auth/' + @ma
+# step %Q{I pause}
+  puts url = URI.parse(current_url)
+
+  visit url + @R_id
+
+end
+
+Given("assert that Not Finalized is allowed in Recommendation dropdown list") do
+
+
+  puts expect(page.has_selector?("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]")).to be true
+
+  # step %Q{I pause}
+
+  page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
+
+
+  options = page.all("//*[@id='SelectedRecommendationId']//option")
+  reco_options = []
+  options.each do |opt|
+    puts opt.text
+    reco_options << opt.text
+  end
+  puts expect(reco_options.include? 'Not Finalized').to be true
+end
+
+
+Given("I logged as EQA") do
+  visit "http://beta.admin.mts.hindawi.com/auth/amr.abdulkarim@hindawi.com"
+
+  find(:xpath, "//*[@id='ctl00_NavigationBar1_LeftNavBar']").hover
+  sleep 1
+
+  find("//*[@id='ctl00_NavigationBar1_LeftNavBar']/div//ul[@class='cssMenu']//ul//li[contains(., 'Staff Manuscripts')]").click
+  sleep 1
+
+  find("//*[@id='container']/div[9]/ul/li[1]/a").click
+  sleep 1
+
+
+  loop do
+    rows = page.all("//*[@id='MtsTable']/tbody/tr/td[2]/div/a")
+    matrixx = []
+    rows.each do |row|
+      @MSiddd = row
+      matrixx << @MSiddd
+      @MSiddd = matrixx.sample
+
+      @IDDD = @MSiddd.text
+    end
+    puts @IDDD
+
+    @MSiddd.click
+
+
+
+    page.find("//*[@id='container']/div[9]/ul[1]/li[contains(., 'Re-Review Manuscript')]/a").click
+
+    @review = page.find("//input[@type='checkbox'][@name='IsRereviewManuscript']")
+    break if @review.checked? == false
+    page.evaluate_script('window.history.back()')
+    page.evaluate_script('window.history.back()')
+
+  end
+  check("IsRereviewManuscript")
+  sleep 1
+  click_button "Save"
+  sleep 1
+
+  a = page.driver.browser.switch_to.alert
+  if a.text == 'something'
+    a.dismiss
+  else
+    a.accept
+  end
+
+
+  yyy = @IDDD.split(/\.|\(|\)/)
+  puts yyy
+  @idx = yyy[0]
+
+  puts @idx
+end
+
+
+Given ("I check that MS Re-review date is the same date of checking the re-review link") do
+sleep 3
+  re_review_date = select_from_dbs("mtsv2", "select RereviewDate, ConfirmedRereviewDate from [dbo].[ManuscriptsRereview] Where ManuscriptId='#{@idx}'")
+
+  re_review_date.each do |row|
+    @D_R = row['RereviewDate']
+    @con_d = row['ConfirmedRereviewDate']
+  end
+
+
+  puts @D_R
+
+  @ok = @D_R.to_s
+
+  sss = @ok.split(/\s/)
+
+  puts @date = sss[0]
+
+
+  @time = Time.now
+
+  @Cdate = @time.to_s
+  fff = @Cdate.split(/\s/)
+
+  puts @currentTime = fff[0]
+
+
+  puts expect(@date == @currentTime).to be true
+  puts expect(@con_d.nil?).to be true
+
+
+end
+
+Given ("I logged as EA who handles the ms and changed the recommendation to Not Finalized") do
+sleep 1
+  us_id = select_from_dbs("mtsv2", "SELECT UserId FROM dbo.staffmanuscripts WHERE ManuscriptId = '#{@idx}'")
+
+  us_id.each do |row|
+    @U_d = row['UserId']
+  end
+
+sleep 1
+emilos = select_from_dbs("mtsv2", "SELECT Email FROM dbo.Users WHERE userId = '#{@U_d}'")
+
+  emilos.each do |row|
+    @emaily_d = row['Email']
+  end
+
+sleep 1
+visit 'http://beta.admin.mts.hindawi.com/auth/' + @emaily_d
+  sleep 1
+  puts url = URI.parse(current_url)
+  sleep 1
+  visit url + @idx
+  sleep 1
+  page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
+
+  sleep 2
+  page.find("//option[@value='Not']").click
+  sleep 2
+page.find("//*[@id='form0']/table/tbody/tr[8]/td[2]/input[@type = 'file']").send_keys "#{ENV['DATAPATH']}6837404.pdf"
+
+find("//*[@id='SupplementaryDescr']").native.clear
+@supplementary = 'ssssssssssssssssssssssssssss'
+find("//*[@id='SupplementaryDescr']").send_keys(@supplementary)
+
+sleep 2
+@tyie = page.find("//*[@id='SelectedMsTypeId']/option[@selected]").text
+puts @tyie
+types = ["Research Article", "Clinical Study", "Review Article", "Letter to the Editor", "Case Report"]
+page.find("//td[contains(text(),'conflicts of interest')]/../following-sibling::tr[1]//input[@value='No']").click if types.include?("#{@tyie}")
+page.find("//td[contains(text(),'data availability')]/../following-sibling::tr[1]//input[@value='Yes']").click if types.first(2).include?("#{@tyie}")
+page.find("//td[contains(text(),'funding')]/../following-sibling::tr[1]//input[@value='Yes']").click if types.first(2).include?("#{@tyie}")
+sleep 1
+
+sleep 2
+  page.find("//*[@id='form0']/table/tbody/tr[31]/td[2]/input").click
+  sleep 1
+  welcome = select_from_dbs("mtsv2", "select  ConfirmedRereviewDate from [dbo].[ManuscriptsRereview] Where ManuscriptId='#{@idx}'")
+
+  welcome.each do |row|
+    @con_x = row['ConfirmedRereviewDate']
+  end
+  puts @con_x
+
+  @okk = @con_x.to_s
+
+  cony = @okk.split(/\s/)
+
+  puts @dat = cony[0]
+
+  @time = Time.now
+
+  @c_date = @time.to_s
+  fff = @c_date.split(/\s/)
+
+  puts @currentTime = fff[0]
+
+  puts expect(@dat == @currentTime).to be true
+
+  revo_id = select_from_dbs("mtsv2", "select  RereviewId from [dbo].[ManuscriptsRereview] Where ManuscriptId='#{@idx}'")
+
+  revo_id.each do |row|
+    @revy_dd = row['RereviewId']
+  end
+
+sleep 1
+  conny_id = select_from_dbs("mtsv2", "select  ConfirmedRereviewDate from [dbo].[ManuscriptsRereviewDates] Where RereviewId='#{@revy_dd}'")
+
+  conny_id.each do |row|
+    @conny_dd = row['ConfirmedRereviewDate']
+  end
+  @sury = @conny_dd.to_s
+
+  cony2 = @sury.split(/\s/)
+
+  puts @sury_datee = cony2[0]
+
+  puts expect(@sury_datee == @dat).to be true
+end
+
+Given ("For a re-review MS, EA change the recommendation to Not finalized") do
+  aerr = []
+  re_rev_pap = select_from_dbs("mtsv2", "select * from [dbo].[ManuscriptsRereview] where confirmedRereviewDate IS NUll")
+  re_rev_pap.each do |row|
+    @re_rev_ids = row['ManuscriptId']
+    aerr << @re_rev_ids
+  end
+  @re_rev_samp = aerr.sample
+
+  puts @re_rev_samp
+
+
+  not_finlized = execute_dbs_query("mtsv2",  "UPDATE Manuscripts SET CurrentRecommendationId = 'Not' where ManuscriptId ='#{@re_rev_samp}'")
+
+  t_ime = Time.now
+  @tt_ime = t_ime.strftime('%Y-%m-%d %T.%L')
+
+  puts @tt_ime
+  noot_finlized = execute_dbs_query("mtsv2", "UPDATE ManuscriptsRereview SET ConfirmedRereviewDate = '#{@tt_ime}' where ManuscriptId ='#{@re_rev_samp}'")
+  sleep 1
+  reminders = select_from_dbs("mtsv2", "SELECT DISTINCT SendDate,Type, ManuscriptId FROM Reminders WHERE ManuscriptId = '#{@re_rev_samp}' ORDER BY SendDate  DESC ")
+
+  types = []
+  datess = []
+  reminders.each do |row|
+    @nos = row['Type']
+    types << @nos
+    @dates = row['SendDate']
+    datess << @dates
+  end
+  re_date = []
+  puts @date = datess[0]
+  @date1 = @date.to_s
+  re_date = @date1.split(/\s/)
+sleep 1
+  @reminder_date = re_date[0]
+  puts @type = types[0]
+
+
+end
+Given /^I choose approved ms$/ do
+  # visit "http://beta.admin.mts.hindawi.com/auth/Sara.Zakareya@hindawi.com"
+  # def open_ms
+  r = []
+  msanu_id = select_from_dbs("mtsv2", "SELECT * FROM dbo.MaterialCheckerManuscripts WHERE ActualAssignDate between '2018-01-01' and '2018-12-30'  AND Status='notyet'")
+  msanu_id.each do |row|
+    @msanu_id = row['ManuscriptId']
+    r << @msanu_id
+    @msanu_id =r.sample
+  end
+  puts @msanu_id
+  user_id = select_from_dbs("mtsv2", "SELECT UserId FROM dbo.StaffManuscripts WHERE ManuscriptId = '#{@msanu_id}'")
+  user_id.each do |row|
+    @UserId = row['UserId']
+  end
+  puts @UserId
+  eA_mail = select_from_dbs("mtsv2", "select Email from dbo.Users where UserId = '#{@UserId}'")
+
+  eA_mail.each do |row|
+    @EAMail = row['Email']
+  end
+  puts @EAMail
+  visit 'http://beta.admin.mts.hindawi.com/auth/'+ @EAMail
+  sleep 1
+  url = URI.parse(current_url)
+  visit url + @msanu_id
+  sleep 1
+
+  page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
+
+  # puts  page.has_xpath?("//input[@type='file'][@name='SupplementaryMaterials'][disabled='disabled']")
+  sleep 1
+  puts find(:xpath,"//*[@id='form0']/table/tbody/tr[8]/td[2]/input").disabled?
+end
+
+
 ############################
 ########### And ############
 ############################
 And /^click next again$/ do
   find(:xpath, '//*[@id="passwordNext"]/content/span').click
-  sleep 3
+  sleep 1
 end
 
 And /^click next$/ do
@@ -355,7 +1104,7 @@ end
 
 And /^click on MS ID$/ do
   find(:xpath, "//*[@id='MtsTable']/tbody/tr[1]/td[3]/div/a").click
-  sleep 10
+  sleep 1
 end
 
 And /^the user enter valid data in Manuscript Author "(.*)"$/ do |author|
@@ -397,6 +1146,65 @@ And /^the user Choose The submission date To "(.*)"$/ do |to|
   fill_in 'SubmissionTo', with: @todate
 end
 
+
+And /^Assert that DB save the new answers as well as the old ones$/ do
+
+  puts @IDDD
+sleep 5
+  qstAns = select_from_dbs("mtsv2", "select * from [dbo].[SubmissionQuestionAnswer] Where ManuscriptId = '#{@IDDD}'")
+  auth_answers = []
+  editorialAnswers = []
+  questions = []
+  qstAns.each do |row|
+    @sub_ans = row['Answer']
+    @ED_ans = row['EditorialAnswer']
+    @qsts = row['MsTypeSubmissionQuestionId']
+    auth_answers << @sub_ans
+    editorialAnswers << @ED_ans
+    questions << @qsts
+
+  end
+
+  puts auth_answers
+
+  puts editorialAnswers
+
+  puts questions
+
+  puts @tyie
+  chg_ED_answers = ["No", "Yes", "Yes"]
+  other_Ed_answers =["No"]
+  if @tyie=="Research Article" || @tyie=="Clinical Study"
+
+
+
+  puts expect(chg_ED_answers == editorialAnswers).to be true
+
+  else
+    puts expect(other_Ed_answers == editorialAnswers).to be true
+end
+
+end
+And /^Select research article ms and navigate to EA account and validate completion of answers of Questions$/ do
+
+  looop2
+  page.first(:xpath, "//*[@id='SubmissionQuestionsAnswersList[0].EditorialAnswer_Yes']").click
+  step %Q{I click  on Update}
+  puts expect(page.has_xpath?("//*[@id='validationSummary']/ul/li[contains(text(),'Please complete the submission questions answers.')]")).to be true
+end
+
+
+And(/^I login to Admin MTS$/) do
+  if page.has_selector?(:id, "identifierId")
+    step %Q{I enter username mts.hindawi@gmail.com}
+    step %Q{I click on Next button "identifierNext"}
+    step %Q{I enter password Mts123456}
+    step %Q{I click on Next button "passwordNext"}
+  end
+end
+
+
+
 ############################
 ########## When ############
 ############################
@@ -404,7 +1212,7 @@ end
 When /^user search by Manuscript ID$/ do
   step %Q{open Admin MTS}
   step %Q{the user enter valid Manuscript number "#{@ms_id}"}
-  sleep 20
+  sleep 1
 end
 
 ############################
@@ -668,7 +1476,7 @@ Then /^System should display manuscripts submitted in that range$/ do
   step %Q{Click Search button}
   result = all(:xpath, '//a[@class="topopup"]')
   result.sample.click
-  sleep 5
+  sleep 1
   submission_date = find(:xpath, "//td[contains(text(),'Submitted On')]//following-sibling::td").text
   date = Date.parse submission_date
   datefrom = Date.strptime(@fromdate, "%m/%d/%Y")
@@ -685,7 +1493,7 @@ Then /^System should display manuscripts submitted from the date enetered till n
   step %Q{Click Search button}
   result = all(:xpath, '//a[@class="topopup"]')
   result.sample.click
-  sleep 5
+  sleep 1
   submission_date = find(:xpath, "//td[contains(text(),'Submitted On')]//following-sibling::td").text
   puts submission_date
   date = Date.parse submission_date
@@ -702,7 +1510,7 @@ Then /^System should display manuscripts submitted till To date$/ do
   step %Q{Click Search button}
   result = all(:xpath, '//a[@class="topopup"]')
   result.sample.click
-  sleep 5
+  sleep 1
   submission_date = find(:xpath, "//td[contains(text(),'Submitted On')]//following-sibling::td").text
   puts submission_date
   date = Date.parse submission_date
@@ -719,7 +1527,7 @@ Then /^System should display manuscripts decision from the date enetered till no
   step %Q{Click Search button}
   result = all(:xpath, '//a[@class="topopup"]')
   result.sample.click
-  sleep 5
+  sleep 1
   decision_date = find(:xpath, "//td[contains(text(),'Recommendation')]//following-sibling::td").text
   puts decision_date
   date = Date.parse decision_date
@@ -735,7 +1543,7 @@ Then /^System should display manuscripts decision in that range$/ do
   step %Q{Click Search button}
   result = all(:xpath, '//a[@class="topopup"]')
   result.sample.click
-  sleep 5
+  sleep 1
   decision_date = find(:xpath, "//td[contains(text(),'Recommendation')]//following-sibling::td").text
   date = Date.parse decision_date
   puts date
@@ -752,7 +1560,7 @@ Then /^System should display manuscripts decision till To date$/ do
   step %Q{Click Search button}
   result = all(:xpath, '//a[@class="topopup"]')
   result.sample.click
-  sleep 5
+  sleep 1
   decision_date = find(:xpath, "//td[contains(text(),'Recommendation')]//following-sibling::td").text
   puts decision_date
   date = Date.parse decision_date
@@ -906,3 +1714,425 @@ Then /^report column display correct numbers$/ do
 end
 
 
+Then /^Validation "(.*)" should be displayed$/ do |message|
+  msg = find("//*[@id ='sp_Message']/b").text
+  puts expect(message == msg).to be true
+  sleep 1
+end
+
+Then("Reminders “Editor Not Decision After Completed Reviews​ and Editor Not Decision After Minor Rev”​ shall be on hold") do
+
+
+  sleep 1
+  @time = Time.now
+
+  @c_date = @time.to_s
+  fff = @c_date.split(/\s/)
+
+  @currentTime = fff[0]
+
+
+  puts expect(@reminder_date == @currentTime && @type == '3' && @type == '7').to be false
+
+end
+
+
+Then("I choose a  specific journal and I check if the dropdown lists of Issues and MS types are following this journal") do
+
+  step %Q{Staff Manuscripts is opened}
+  loop do
+    xx = page.all("//table[@id='MtsTable']/tbody/tr/td[3]/a")
+    matrix = []
+    xx.each do |row|
+      @MSidd = row
+      matrix << @MSidd
+      @MSidd = matrix.sample
+
+      @IDDD = @MSidd.text
+    end
+    puts @IDDD
+    @MSidd.click
+
+    sleep 1
+    @journal_id = page.find("//*[@id='msDetailes']//td[contains(text(),'Journal')]//..//following-sibling::td[2]").text
+    puts @journal_id
+
+    break if page.has_selector?("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]")
+    page.evaluate_script('window.history.back()')
+  end
+
+  journal_ids = select_from_dbs("mtsv2", "select JournalId from [dbo].[Journals] where FullName='#{@journal_id}'")
+  journal_ids.each do |row|
+    @j_id = row['JournalId']
+  end
+
+  puts @j_id
+  issue_ids = select_from_dbs("mtsv2", "select IssueId from Issues where JournalId='#{@j_id}' AND IsArchived='0' AND IsCanceled='0' ORDER BY IssueId ASC")
+  issues_names = []
+  issue_ids.each do |row|
+    @issue = row['IssueId']
+    issues_names << @issue
+  end
+  puts @db_length = issues_names.length
+  puts issues_names
+
+  page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
+  sp_names = []
+  sp = page.all("//select[@name='SelectedIssueId']/option")
+  sp.each do |row|
+    @sp_n = row.text
+    sp_names << @sp_n
+
+  end
+
+  list_types = page.all("//select[@id='SelectedMsTypeId']/option")
+  list_ttypes = []
+  list_types.each do |row|
+    @ty = row.text
+    list_ttypes << @ty
+  end
+  typos = []
+  typos = list_ttypes.sort do |a, b|
+    a.upcase <=> b.upcase
+  end
+  puts typos
+  puts @list_length = sp_names.length
+  xxx = []
+  xxx = sp_names.sort do |a, b|
+    a.upcase <=> b.upcase
+  end
+  puts xxx
+
+  expect(@db_length == @list_length).to be true
+  expect(xxx == issues_names).to be true
+
+
+  ms_types = select_from_dbs("mtsv2","select MsTypeId from [dbo].[JournalsMsTypes] where JournalId ='#{@j_id}'")
+  ms_ttypes = []
+  ms_types.each do |row|
+    @type = row['MsTypeId']
+
+    names = select_from_dbs("mtsv2", "select MsTypeName from [dbo].[MsTypes] where MsTypeId='#{@type}'")
+    names.each do |row|
+      @name = row['MsTypeName']
+      ms_ttypes << @name
+    end
+
+  end
+
+  teto = []
+  teto = ms_ttypes.sort do |a, b|
+    a.upcase <=> b.upcase
+  end
+  puts teto
+
+  expect(teto == typos).to be true
+  expect(teto.length == typos.length).to be true
+end
+
+Then("Check new changes in MTs website at editor-author-reviewer of this MS") do
+
+  ed_auth_ids = select_from_dbs(  "mtsv2", "select CurrentEditorId, AuthorId from manuscripts where manuscriptid='#{@msddz}'")
+  ed_auth_ids.each do |row|
+    @co_author = row['AuthorId']
+    @editor = row['CurrentEditorId']
+  end
+
+  puts @co_author
+  puts @editor
+
+  emails = select_from_dbs( "mtsv2", "select Email from users where userid = '#{@co_author}'")
+  emails.each do |row|
+    @author_email = row['Email']
+  end
+
+  emails_s = select_from_dbs( "mtsv2", "select Email from users where userid = '#{@editor}'")
+
+  emails_s.each do |row|
+    @editor_email = row['Email']
+  end
+
+  puts @author_email
+  puts @editor_email
+
+  reviewer_user_id = select_from_dbs("mtsv2", "select UserId from [dbo].[ReviewersAnswers] where ManuscriptId ='#{@msddz}'")
+  reviwers_ids = []
+  reviewer_user_id.each do |row|
+    @reviewer_id = row['UserId']
+    reviwers_ids << @reviewer_id
+  end
+  @revwyer_id = reviwers_ids.sample
+
+  puts @revwyer_id
+
+
+  r_email = select_from_dbs("mtsv2", "select Email from Users where UserId='#{@revwyer_id}'")
+  r_email.each do |row|
+    @mailo = row['Email']
+  end
+  puts @mailo
+  sleep 1
+
+
+  visit 'http://beta.mts.hindawi.com/sally.safwat@hindawi.com/sa123456/' + @mailo
+
+  page.find("//*[@id='container']/div[5]/div/ul/li[contains(.,'Reviewer Activities')]/a").click
+
+  @no = @zz.split('/')
+  puts @no[1]
+  sleep 1
+  page.find("//*[@id ='container']/div[5]/div/table/tbody/tr/td[contains(., '#{@no[1]}')]/a").click
+
+  page.find("//*[@id='content']/div/table/tbody/tr[1]/td[2]/div[1]/a").click
+  sleep 1
+
+  if @no[1].include?("v1")
+    File.open("#{ENV['Download_Dir']}/#{@no[1]}.pdf", 'rb') do |io|
+      reader = PDF::Reader.new(io)
+      reader.pages.each do |page|
+        # page.text
+        puts expect(page.should have_content('Author 3')).to be true
+      end
+    end
+  elsif @no[1].include?("v2")
+
+    File.open("#{ENV['Download_Dir']}/#{@no[1]}.pdf", 'rb') do |io|
+      reader = PDF::Reader.new(io)
+      reader.pages.each do |page|
+        page.text
+        puts expect(page.should have_content('Author 3')).to be true
+      end
+      sleep 2
+      # @session.driver.browser.action.context_click(self.native).perform
+
+    end
+
+
+  end
+
+  clear_downloads
+  sleep 1
+
+
+  visit 'http://beta.mts.hindawi.com/sally.safwat@hindawi.com/sa123456/' + @author_email
+
+  page.find("//*[@id ='container']/div[5]/div/ul/li[contains(.,'Author Activities')]/a").click
+
+  page.find("//*[@id ='container']/div[5]/div/table/tbody/tr/td[contains(., '#{@no[1]}')]/a").click
+  page.find("//*[@id='content']/div/table/tbody/tr[1]/td[2]/div[1]/a").click
+  sleep 1
+
+  if @no[1].include?("v1")
+    File.open("#{ENV['DOWNLOAD_DIR']}/#{@no[1]}.pdf", 'rb') do |io|
+      reader = PDF::Reader.new(io)
+      reader.pages.each do |page|
+        # page.text
+        puts expect(page.should have_content('Author 3')).to be true
+      end
+    end
+  elsif @no[1].include?("v2")
+
+    File.open("#{ENV['DOWNLOAD_DIR']}/#{@no[1]}.pdf", 'rb') do |io|
+      reader = PDF::Reader.new(io)
+      reader.pages.each do |page|
+        page.text
+        puts expect(page.should have_content('Author 3')).to be true
+      end
+      sleep 10
+      # @session.driver.browser.action.context_click(self.native).perform
+
+    end
+
+
+  end
+
+  clear_downloads
+
+
+  if @issu_acronm == 'regular'
+    visit 'http://beta.mts.hindawi.com/sally.safwat@hindawi.com/sa123456/' + @editor_email
+    page.find("//*[@id='container']/div[5]//a[text()[normalize-space(.) = 'Editor Activities']]").click
+
+    page.find("//*[@id ='container']/div[5]/div/table/tbody/tr/td[contains(., '#{@no[1]}')]/a").click
+    page.find("//*[@id='content']/div/table/tbody/tr[1]/td[2]/div[1]/a").click
+    sleep 1
+
+    chekdown
+    clear_downloads
+
+  else
+
+    editor = select_from_dbs("mtsv2", "select EditorsEdCategories.userid
+from EditorsEdCategories left outer join users
+on EditorsEdCategories.userid=users.userid
+left outer join journals
+on EditorsEdCategories.journalid=journals.journalid
+where( EditorsEdCategories.termenddate is null or termenddate >getdate())
+and journals.issold=0
+and journals.isceased=0
+and users.email='#{@editor_email}'")
+
+    editor.each do |row|
+      @edtor = row
+    end
+
+
+    puts @edtor
+
+
+    g_editor = select_from_dbs("mtsv2", "select EditorsIssues.UserId
+from EditorsIssues left outer join users
+on EditorsIssues.userid=users.UserId
+where
+ EditorsIssues.userid in (select currenteditorid from manuscripts where manuscriptid = '#{@msddz}')
+ and email ='#{@editor_email}'")
+
+    g_editor.each do |row|
+      @gdtor = row
+    end
+
+    puts @gdtor
+
+
+    lg_editor = select_from_dbs("mtsv2", "select EditorsIssues.UserId
+from EditorsIssues left outer join users
+on EditorsIssues.userid=users.UserId
+where IsLeadGuestEditor='1'
+ and EditorsIssues.userid in (select currenteditorid from manuscripts where manuscriptid = '#{@msddz}')
+ and email ='#{@editor_email}'")
+
+    lg_editor.each do |row|
+      @lgdtor = row
+    end
+
+    puts @lgdtor
+
+
+    if @edtor.nil? == false
+
+      visit 'http://beta.mts.hindawi.com/sally.safwat@hindawi.com/sa123456/' + @editor_email
+      sleep 1
+      page.find("//*[@id='container']/div[5]//a[text()[normalize-space(.) = 'Editor Activities']]").click
+      sleep 1
+      @no = @zz.split('/')
+      page.find("//*[@id ='container']/div[5]/div/table/tbody/tr/td[contains(., '#{@no[1]}')]/a").click
+      sleep 1
+      page.find("//*[@id='content']/div/table/tbody/tr[1]/td[2]/div[1]/a").click
+      sleep 1
+      chekdown
+      clear_downloads
+
+
+    elsif @gdtor.nil? == false
+
+
+      visit 'http://beta.mts.hindawi.com/sally.safwat@hindawi.com/sa123456/' + @editor_email
+      sleep 1
+      page.find("//*[@id='container']/div[5]//a[text()[normalize-space(.) = 'Guest Editor Activities']]").click
+      sleep 1
+      page.find("//*[@id='container']/div[5]/div/table/tbody/tr[contains(., '#{@issu_acronm}')]/td//following-sibling::td[4]").click
+      @no = @zz.split('/')
+      sleep 1
+      page.find("//*[@id ='container']/div[5]//tr//td[contains(., '#{@no[1]}')]/a").click
+      sleep 1
+      page.find("//*[@id='content']/div/table/tbody/tr[1]/td[2]/div[1]/a").click
+      sleep 1
+      chekdown
+      clear_downloads
+
+
+    elsif @lgdtor.nil? == false
+
+      visit 'http://beta.mts.hindawi.com/sally.safwat@hindawi.com/sa123456/' + @editor_email
+      sleep 1
+      page.find("//*[@id='container']/div[5]//a[text()[normalize-space(.) = 'Lead Guest Editor Activities']]").click
+      sleep 1
+      page.find("//*[@id='container']/div[5]/div/table/tbody/tr[contains(., '#{@issu_acronm}')]/td//following-sibling::td[4]").click
+      sleep 1
+      @no = @zz.split('/')
+      page.find("//*[@id ='container']/div[5]/div/table/tbody/tr/td[contains(., '#{@no[1]}')]/a").click
+      sleep 1
+      page.find("//*[@id='content']/div/table/tbody/tr[1]/td[2]/div[1]/a").click
+      sleep 1
+      chekdown
+      clear_downloads
+
+    end
+  end
+end
+
+###############################################
+# ##############When######################
+##########################################
+#
+#
+When("I choose random MS and click on Edit Manuscript") do
+
+  selectMS
+  page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
+  sleep 1
+  loop do
+    if page.has_selector?("//b[text()='You are not authorized to view this page.']")
+      page.evaluate_script('window.history.back()')
+      sleep 1
+      page.evaluate_script('window.history.back()')
+      sleep 1
+      selectMS
+      page.find("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]/a").click
+    end
+    break if page.has_selector?("//*[@id='form0']/table/tbody/tr[1]/td[1]")
+  end
+end
+
+
+When("I click  on Update") do
+  find("//*[@id='form0']/table/tbody/tr[31]/td[2]/input").click
+  sleep 1
+end
+
+When("I choose ms from db") do
+  sleep 1
+  msid = select_from_dbs("mtsv2", "select ManuscriptId from manuscripts Where CurrentRecommendationId = 'EdMajor' and MSSubmitDate >= '2018-01-01 00:00:00'")
+  idez = []
+  msid.each do |row|
+    @msdd = row['ManuscriptId']
+    idez << @msdd
+  end
+  @msddz = idez.sample
+  puts @msddz
+
+  sleep 1
+  issueidz = select_from_dbs("mtsv2", "Select IssueId from manuscripts where  manuscriptid ='#{@msddz}'")
+  issueidz.each do |row|
+
+    @issu_acronm = row['IssueId']
+  end
+
+  puts @issu_acronm
+
+  sleep 1
+  use = select_from_dbs("mtsv2", "select UserId from staffmanuscripts where manuscriptid ='#{@msddz}'")
+  use.each do |row|
+    @user = row['UserId']
+  end
+  puts @user
+
+  email = select_from_dbs("mtsv2", "select Email from users where userid ='#{@user}'")
+  email.each do |row|
+    @emeil = row['Email']
+  end
+  puts @emeil
+
+  visit 'http://beta.admin.mts.hindawi.com/auth/' + @emeil
+  sleep 1
+  puts url = URI.parse(current_url)
+
+  visit url + @msddz
+  sleep 2
+# break if page.has_selector?("//*[@id='container']/div[9]/ul/li[contains(.,'Edit Manuscript Details')]")
+  page.find("//a[contains(text(),'Edit Manuscript Details')]").click
+
+  sleep 1
+  # end
+
+end
